@@ -23,6 +23,7 @@ class UnrealMCP(FastMCP):
         self.should_exit = False
         self.uuid = uuid.uuid4()
         self.task_queue = asyncio.Queue()  # 用于存储任务的队列
+        
         #self.tick_loop =  asyncio.SelectorEventLoop()
         
 
@@ -39,7 +40,8 @@ class UnrealMCP(FastMCP):
     async def async_run(self):
         self.init_bridge()
         # await self.init_server()
-        # await self.server.serve()
+        # await self.server._serve()
+        
         try:
             await self.start_up()
         except Exception as e:
@@ -90,7 +92,7 @@ class UnrealMCP(FastMCP):
             starlette_app,
             host=self.settings.host,
             port=self.settings.port,
-            timeout_graceful_shutdown = 10,
+            #timeout_graceful_shutdown = 10,
             log_level=self.settings.log_level.lower(),
         )
         self.server = uvicorn.Server(config)
@@ -118,6 +120,7 @@ class UnrealMCP(FastMCP):
     async def shutdown(self):
         unreal.log("begin stop")
         await self.tick()
+        self.server.force_exit = True
         await self.server.shutdown(sockets=None)
         self.clear_bridge()
         unreal.log("Server stopped " + str(self.uuid))
@@ -144,5 +147,7 @@ class UnrealMCP(FastMCP):
         future = asyncio.Future()
         await self.task_queue.put((func, args, kwargs, future))
         return await future
+    
+    
 
 

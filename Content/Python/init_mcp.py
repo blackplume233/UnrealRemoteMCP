@@ -19,14 +19,10 @@ import tools.common_tools as common_register
 
 #unreal.log("MCP Initialization Script Loaded")
 
-
-
 # 忽略 Pydantic 的 'model_fields' 警告
 warnings.filterwarnings("ignore", category=DeprecationWarning, message="Accessing the 'model_fields' attribute on the instance is deprecated")
 
-global_context.increment_counter()
-unreal.log("Static Counter: " + str(global_context.get_counter()))
-
+#global_context.rebuild_event_loop()
 mcp = UnrealMCP("Remote Unreal MCP",port=8422)
 common_register.register_common_tools(mcp)
 
