@@ -13,5 +13,7 @@
 			"../../../../Intermediate/PythonStub",
 			"./Lib/site-packages"
 		],
+		"http.proxy": "",
+		"http.proxyStrictSSL": false
 	}
 }
