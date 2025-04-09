@@ -10,7 +10,7 @@ def register_common_tools(mcp : UnrealMCP):
     
     @mcp.tool()
     async def tick_get_actor_count(ctx):
-        return mcp.to_tick_thread(get_actor_count,ctx)
+        return await mcp.to_tick_thread(get_actor_count,ctx)
     
     def get_actor_count(ctx):
         """Get the number of actors in the current Unreal Engine scene."""

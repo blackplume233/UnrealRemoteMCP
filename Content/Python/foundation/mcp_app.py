@@ -10,7 +10,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.server import Settings
 import uvicorn
 import socket
-
+from foundation import global_context
 max_tick_count = 86400
 
 class UnrealMCP(FastMCP):
@@ -28,8 +28,7 @@ class UnrealMCP(FastMCP):
 
     def sync_run_func(self, function: Any) -> None:
         # 运行函数
-        loop = asyncio.SelectorEventLoop()
-        asyncio.set_event_loop(loop)
+        loop = global_context.get_event_loop()
         loop.run_until_complete(function())
         pass
 
