@@ -2,9 +2,10 @@ import asyncio
 import time
 import os
 import traceback
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable, Sequence
 import uuid
 import anyio
+from mcp.types import AnyFunction, EmbeddedResource, ImageContent, TextContent
 import unreal
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.server import Settings
@@ -23,7 +24,7 @@ class UnrealMCP(FastMCP):
         self.should_exit = False
         self.uuid = uuid.uuid4()
         self.task_queue = asyncio.Queue()  # 用于存储任务的队列
-        
+        self._game_thread_tool_set = set[str]()
         #self.tick_loop =  asyncio.SelectorEventLoop()
         
 
@@ -137,10 +138,13 @@ class UnrealMCP(FastMCP):
             func, args, kwargs,future = await self.task_queue.get()
             try:
                 result = func(*args, **kwargs)
+                if isinstance(result, Awaitable):
+                    result = await result
                 future.set_result(result)
                 unreal.log(f"Executed tool: {func.__name__}, Result: {result}")
             except Exception as e:
                 unreal.log_error(f"Error executing tool {func.__name__}: {str(e)}")
+                
     async def to_tick_thread(self, func:Callable, *args: Any, **kwargs: Any) -> Any:
         # 将函数添加到任务队列
         unreal.log("Add task to queue")
@@ -148,6 +152,39 @@ class UnrealMCP(FastMCP):
         await self.task_queue.put((func, args, kwargs, future))
         return await future
     
+    async def call_tool(self, name: str, arguments: dict[str, Any]) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+        """Call a tool by name with arguments."""
+        if(self._game_thread_tool_set.__contains__(name)):
+            unreal.log("run game thread tool {name}")
+            async def wrapped_call_tool():
+                return await super(UnrealMCP, self).call_tool(name, arguments)
+            return await self.to_tick_thread(wrapped_call_tool)
+        unreal.log(f"run common tool {name} {arguments}")
+        return await super().call_tool( name, arguments)
     
+    
+    def game_thread_tool(
+        self, name: str | None = None, description: str | None = None
+    ) -> Callable[[AnyFunction], AnyFunction]:
+        """Decorator to register a tool."""
+
+        # Check if user passed function directly instead of calling decorator
+        if callable(name):
+            raise TypeError(
+                "The @tool decorator was used incorrectly. "
+                "Did you forget to call it? Use @tool() instead of @tool"
+            )
+
+        def decorator(fn: AnyFunction) -> AnyFunction:
+            fn_desc = f'(GameThread){description or fn.__doc__}' 
+            func_name =  name or fn.__name__
+            self._game_thread_tool_set.add(func_name)
+            
+            unreal.log(f"Registering tool: {func_name} - {fn_desc}")
+            self.add_tool(fn, func_name, fn_desc)
+            return fn
+
+        return decorator
+
 
 
