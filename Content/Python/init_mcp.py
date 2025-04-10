@@ -24,6 +24,8 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, message="Accessin
 
 #global_context.rebuild_event_loop()
 mcp = UnrealMCP("Remote Unreal MCP",port=8422)
+
+importlib.reload(common_register)
 common_register.register_common_tools(mcp)
 
 mcp.run()

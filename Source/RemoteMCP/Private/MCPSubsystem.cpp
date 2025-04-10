@@ -12,13 +12,6 @@ void UMCPSubsystem::Tick(float DeltaTime)
 		return;
 	}
 
-	if (WaitStart)
-	{
-		if (MCPContext.Bridge.IsBound())
-			MCPContext.Bridge.Execute(EMCPBridgeFuncType::Start, TEXT("MCP Started"));
-		WaitStart = false;
-	}
-
 	TickCount ++;
 	if (TickCount % TickInterval == 0)
 	{
