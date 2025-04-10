@@ -4,6 +4,7 @@
 #include "MCPSubsystem.h"
 #include "Async/Future.h"
 #include "IPythonScriptPlugin.h"
+#include "MCPSetting.h"
 
 void UMCPSubsystem::Tick(float DeltaTime)
 {
@@ -34,6 +35,15 @@ void UMCPSubsystem::Tick(float DeltaTime)
 	}
 }
 
+void UMCPSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+	if (GetDefault<UMCPSetting>()->bAutoStart)
+	{
+		StartMCP();
+	}
+}
+
 void UMCPSubsystem::SetupObject(FMCPObject Context)
 {
 	this->MCPContext = Context;
@@ -47,7 +57,12 @@ void UMCPSubsystem::ClearObject()
 
 void UMCPSubsystem::StartMCP()
 {
-	StopMCP();
+	//StopMCP();
+	if (MCPContext.Valid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("MCP Already Running"));
+		return;
+	}
 	RunTread = Async(EAsyncExecution::Thread, []()
 	{
 		// Your code to start the MCP goes here
@@ -61,8 +76,17 @@ void UMCPSubsystem::StartMCP()
 
 void UMCPSubsystem::StopMCP()
 {
-	if (!MCPContext.Bridge.IsBound()) return;
+	if (!MCPContext.Valid()) return;
 	auto _= MCPContext.Bridge.Execute(EMCPBridgeFuncType::Exit, TEXT("MCP Stopped"));
 	RunTread.Wait();
 	//ClearObject();
+}
+
+EMCPServerState UMCPSubsystem::GetMCPServeState() const
+{
+	if (MCPContext.Valid())
+	{
+		return EMCPServerState::Runing;
+	}
+	return EMCPServerState::Stop;
 }

@@ -32,8 +32,8 @@ def register_common_tools(mcp : UnrealMCP):
         try:
             return str(exec(script))
         except Exception as e:
-            unreal.log_error(f"Failed to execute script: {str(e)}")
-            return "Script execution failed."
+            #unreal.log_error(f"Failed to execute script: {str(e)}")
+            return f"Script execution failed. {str(e)}"
 
 
     @mcp.game_thread_tool()

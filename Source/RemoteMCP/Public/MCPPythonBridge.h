@@ -19,4 +19,5 @@ public:
 private:
 	UFUNCTION(BlueprintCallable)
 	static FString SearchConsoleCommands(FString KeyWords);
+
 };

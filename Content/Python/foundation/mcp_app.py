@@ -180,9 +180,10 @@ class UnrealMCP(FastMCP):
             func_name =  name or fn.__name__
             self._game_thread_tool_set.add(func_name)
             
-            unreal.log(f"Registering tool: {func_name} - {fn_desc}")
+            #unreal.log(f"Registering tool: {func_name} - {fn_desc}")
             self.add_tool(fn, func_name, fn_desc)
             return fn
+            
 
         return decorator
 

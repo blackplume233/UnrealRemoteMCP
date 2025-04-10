@@ -21,10 +21,11 @@ DECLARE_DYNAMIC_DELEGATE_OneParam(FMCPBridgeCallback,  const FString&, Message);
 DECLARE_DYNAMIC_DELEGATE(FMCPObjectEventFunction);
 
 UENUM(BlueprintType)
-enum EMCPObjectState
+enum EMCPServerState
 {
 	None,
-	Living,
+	Runing,
+	Stop,
 };
 
 USTRUCT(BlueprintType)
@@ -46,9 +47,10 @@ public:
 
 	bool Valid() const
 	{
-		return Bridge.IsBound() ;
+		return PythonObjectHandle != nullptr;
 	}
 };
+
 /**
  * 
  */
@@ -81,19 +83,20 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 #pragma endregion
-
-
-	UFUNCTION(BlueprintCallable)
-	void SetupObject(FMCPObject Context);
-
-	UFUNCTION(BlueprintCallable)
-	void ClearObject();
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
 	UFUNCTION(BlueprintCallable)
 	void StartMCP() ;
-
 	UFUNCTION(BlueprintCallable)
 	void StopMCP() ;
+
+	UFUNCTION(BlueprintCallable)
+	EMCPServerState GetMCPServeState() const;
+private:
+	UFUNCTION(BlueprintCallable)
+	void SetupObject(FMCPObject Context);
+	UFUNCTION(BlueprintCallable)
+	void ClearObject();
 private:
 	UPROPERTY()
 	FMCPObject MCPContext;

@@ -44,6 +44,7 @@ public class RemoteMCP : ModuleRules
 				"Slate",
 				"SlateCore", "Blutility","UMG","UMGEditor", "PythonScriptPlugin","Json","JsonUtilities"
 				// ... add private dependencies that you statically link with here ...	
+				,"DeveloperSettings"
 			}
 			);
 		

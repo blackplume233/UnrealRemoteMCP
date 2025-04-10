@@ -4,18 +4,107 @@
 
 
 #include "EditorUtilityWidgetBlueprint.h"
+#include "MCPSubsystem.h"
 #include "RemoteMCPStyle.h"
 #include "RemoteMCPCommands.h"
 #include "Widgets/Docking/SDockTab.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Text/STextBlock.h"
 #include "ToolMenus.h"
+#include "MCPMisc.h"
 
 class UEditorUtilitySubsystem;
 class UEditorUtilityWidget;
 static const FName RemoteMCPTabName("RemoteMCP");
 
 #define LOCTEXT_NAMESPACE "FRemoteMCPModule"
+DEFINE_LOG_CATEGORY(LogRemoteMCP);
+
+
+namespace MCPCommand
+{
+	static FAutoConsoleCommand StartMCPCommand{
+		TEXT("MCP.Start"),
+		TEXT("Start RemoteMCP"),
+		FConsoleCommandDelegate::CreateLambda([]()
+		{
+			if (GEditor)
+			{
+				if (UMCPSubsystem* EditorUtilitySubsystem = GEditor->GetEditorSubsystem<UMCPSubsystem>())
+				{
+					EditorUtilitySubsystem->StartMCP();
+				}
+			}
+		}),
+
+	};
+
+	static FAutoConsoleCommand StopMCPCommand{
+		TEXT("MCP.Stop"),
+		TEXT("Stop RemoteMCP"),
+		FConsoleCommandDelegate::CreateLambda([]()
+		{
+			if (GEditor)
+			{
+				if (UMCPSubsystem* McpSubsystem = GEditor->GetEditorSubsystem<UMCPSubsystem>())
+				{
+					McpSubsystem->StopMCP();
+				}
+			}
+		})
+	};
+
+	static FAutoConsoleCommand RestartMCPCommand{
+		TEXT("MCP.Restart"),
+		TEXT("Restart RemoteMCP"),
+		FConsoleCommandDelegate::CreateLambda([]()
+		{
+			if (GEditor)
+			{
+				if (UMCPSubsystem* McpSubsystem = GEditor->GetEditorSubsystem<UMCPSubsystem>())
+				{
+					McpSubsystem->StopMCP();
+					McpSubsystem->StartMCP();
+				}
+			}
+		})
+	};
+
+	static FAutoConsoleCommand MCPStateCommand{
+		TEXT("MCP.State"),
+		TEXT("Get RemoteMCP State"),
+		FConsoleCommandDelegate::CreateLambda([]()
+		{
+			if (GEditor)
+			{
+				if (UMCPSubsystem* McpSubsystem = GEditor->GetEditorSubsystem<UMCPSubsystem>())
+				{
+					auto State = McpSubsystem->GetMCPServeState();
+					switch (State)
+					{
+					case EMCPServerState::Runing:
+						UE_LOG(LogRemoteMCP, Log, TEXT("RemoteMCP Running"));
+						break;
+					case EMCPServerState::Stop:
+						UE_LOG(LogRemoteMCP, Log, TEXT("RemoteMCP Stopped"));
+						break;
+					default:
+						break;
+					}
+				}
+			}
+		})
+	};
+
+	static FAutoConsoleCommand MCPDebugPanel{
+		TEXT("MCP.DebugPanel"),
+		TEXT("open debug panel whitch only for developer(and is in beta)"),
+		FConsoleCommandDelegate::CreateLambda([]()
+		{
+			FGlobalTabmanager::Get()->TryInvokeTab(RemoteMCPTabName);
+		})
+	};
+}
 
 void FRemoteMCPModule::StartupModule()
 {
@@ -33,11 +122,13 @@ void FRemoteMCPModule::StartupModule()
 		FExecuteAction::CreateRaw(this, &FRemoteMCPModule::PluginButtonClicked),
 		FCanExecuteAction());
 
-	UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FRemoteMCPModule::RegisterMenus));
+	//UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FRemoteMCPModule::RegisterMenus));
 	
 	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(RemoteMCPTabName, FOnSpawnTab::CreateRaw(this, &FRemoteMCPModule::OnSpawnPluginTab))
 		.SetDisplayName(LOCTEXT("FRemoteMCPTabTitle", "RemoteMCP"))
 		.SetMenuType(ETabSpawnerMenuType::Hidden);
+
+	//RegisterCommand();
 }
 
 void FRemoteMCPModule::ShutdownModule()

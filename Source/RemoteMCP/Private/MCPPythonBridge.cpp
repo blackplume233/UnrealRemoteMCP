@@ -2,6 +2,7 @@
 
 
 #include "MCPPythonBridge.h"
+#include "MCPMisc.h"
 
 template<class CharType, class PrintPolicy>
 bool UStructToJsonObjectStringInternal(const TSharedRef<FJsonObject>& JsonObject, FString& OutJsonString, int32 Indent)
@@ -35,3 +36,4 @@ FString UMCPPythonBridge::SearchConsoleCommands(FString KeyWords)
 	Ret->SetArrayField(TEXT("ConsoleObjects"), JsonArray);
 	return ConvertJsonObjectToString(Ret.ToSharedRef());
 }
+
