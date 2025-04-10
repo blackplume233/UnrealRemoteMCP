@@ -20,7 +20,7 @@
    
 2. 启动引擎并在 `Edit->Plugins`面板中启动`RemoteMCP`插件
 
-   ![image-20250410231644664](./Doc/Asset/plugin_image.png)
+   ![image-20250410231644664](./Resources/plugin_image.png)
 
 3. 重启引擎
 
