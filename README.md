@@ -1,7 +1,7 @@
 # RemoteMCP 插件
 这是一个基于UnrealEngine内置的Python插件实现的[MCP Server](https://modelcontextprotocol.io/introduction)。
 该插件的目标是希望使得Unreal开发者可以更容易的利用AI来辅助Unreal项目的开发。
-个人在尝试MCP时，主要考虑的场景如下：
+
 
 ## 插件目标
 
