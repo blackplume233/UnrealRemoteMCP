@@ -1,0 +1,10 @@
+{
+    "python.autoComplete.extraPaths": [
+        "../../../../Intermediate/PythonStub",
+        "./Lib/site-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "../../../../Intermediate/PythonStub",
+        "./Lib/site-packages"
+    ]
+}

@@ -25,7 +25,7 @@ public class RemoteMCP : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core",
+				"Core", "JsonUtilities",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -44,10 +44,25 @@ public class RemoteMCP : ModuleRules
 				"Slate",
 				"SlateCore", "Blutility","UMG","UMGEditor", "PythonScriptPlugin","Json","JsonUtilities"
 				// ... add private dependencies that you statically link with here ...	
-				,"DeveloperSettings"
+				,"DeveloperSettings", "EditorScriptingUtilities",
 			}
 			);
-		
+		PrivateDependencyModuleNames.AddRange(
+			new string[]
+			{
+				"UnrealEd",
+				"EditorScriptingUtilities",
+				"EditorSubsystem",
+				"Slate",
+				"SlateCore",
+				"UMG",
+				"Kismet",
+				"KismetCompiler",
+				"BlueprintGraph",
+				"Projects",
+				"AssetRegistry"
+			}
+		);
 		
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]

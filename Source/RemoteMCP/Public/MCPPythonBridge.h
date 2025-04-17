@@ -13,11 +13,13 @@ UCLASS()
 class REMOTEMCP_API UMCPPythonBridge : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
-public:
-	static FString ConvertJsonObjectToString(const TSharedRef<FJsonObject>& JsonObject);
-
 private:
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category="MCP")
 	static FString SearchConsoleCommands(FString KeyWords);
+	UFUNCTION(BlueprintCallable, Category="MCP")
+	static FString PluginDirectory(FString PluginName);
 
+#pragma region Blueprint
+
+#pragma endregion
 };

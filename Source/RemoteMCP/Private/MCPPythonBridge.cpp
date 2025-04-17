@@ -3,22 +3,11 @@
 
 #include "MCPPythonBridge.h"
 #include "MCPMisc.h"
+#include "MCPUtility.h"
+#include "Interfaces/IPluginManager.h"
 
-template<class CharType, class PrintPolicy>
-bool UStructToJsonObjectStringInternal(const TSharedRef<FJsonObject>& JsonObject, FString& OutJsonString, int32 Indent)
-{
-	TSharedRef<TJsonWriter<CharType, PrintPolicy> > JsonWriter = TJsonWriterFactory<CharType, PrintPolicy>::Create(&OutJsonString, Indent);
-	bool bSuccess = FJsonSerializer::Serialize(JsonObject, JsonWriter);
-	JsonWriter->Close();
-	return bSuccess;
-}
 
-FString UMCPPythonBridge::ConvertJsonObjectToString(const TSharedRef<FJsonObject>& JsonObject)
-{
-	FString Ret;
-	UStructToJsonObjectStringInternal<TCHAR,TPrettyJsonPrintPolicy<TCHAR>>(JsonObject, Ret, 0);
-	return Ret;
-}
+
 
 FString UMCPPythonBridge::SearchConsoleCommands(FString KeyWords)
 {
@@ -34,6 +23,11 @@ FString UMCPPythonBridge::SearchConsoleCommands(FString KeyWords)
 	};
 	IConsoleManager::Get().ForEachConsoleObjectThatContains(FConsoleObjectVisitor::CreateLambda(Visitor),GetData(KeyWords));
 	Ret->SetArrayField(TEXT("ConsoleObjects"), JsonArray);
-	return ConvertJsonObjectToString(Ret.ToSharedRef());
+	return UMCPUtility::ConvertJsonObjectToString(Ret.ToSharedRef());
+}
+
+FString UMCPPythonBridge::PluginDirectory(FString PluginName)
+{
+	return IPluginManager::Get().FindPlugin(PluginName)->GetBaseDir();
 }
 

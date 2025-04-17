@@ -19,8 +19,7 @@ static const FName RemoteMCPTabName("RemoteMCP");
 
 #define LOCTEXT_NAMESPACE "FRemoteMCPModule"
 DEFINE_LOG_CATEGORY(LogRemoteMCP);
-
-
+DEFINE_LOG_CATEGORY(LogMCPTools);
 namespace MCPCommand
 {
 	static FAutoConsoleCommand StartMCPCommand{
