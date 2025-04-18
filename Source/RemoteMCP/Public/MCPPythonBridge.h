@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Structure/JsonParameter.h"
+#include "Structure/MCPStructure.h"
 #include "MCPPythonBridge.generated.h"
+
 
 /**
  * 
@@ -19,6 +22,8 @@ private:
 	UFUNCTION(BlueprintCallable, Category="MCP")
 	static FString PluginDirectory(FString PluginName);
 
+	UFUNCTION(BlueprintCallable, Category="MCP")
+	static FString SafeCallCPPFunction(FMCPCommandDelegate Callable, const FString& Parameter);
 #pragma region Blueprint
 
 #pragma endregion

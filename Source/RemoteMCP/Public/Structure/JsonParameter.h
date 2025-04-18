@@ -13,6 +13,12 @@ struct FJsonObjectParameter
 	GENERATED_BODY()
 
 public:
+	FJsonObjectParameter(const FString& Other)
+	{
+		JsonObjectFromString(Other);
+		JsonString = Other;
+	}
+
 	FJsonObjectParameter(const FJsonObjectWrapper& Other)
 	{
 		JsonString = Other.JsonString;
@@ -38,8 +44,12 @@ private:
 public:
 	REMOTEMCP_API FJsonObjectParameter();
 
-
-
+	REMOTEMCP_API FString ConvertToString() const
+	{
+		FString Result;
+		JsonObjectToString(Result);
+		return Result;
+	}
 
 
 

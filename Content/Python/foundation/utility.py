@@ -1,6 +1,17 @@
 import json
 from typing import Callable
 import unreal
+
+
+class UnrealDelegateProxy:
+    def __init__(self, delegate: Callable):
+        self.delegate = delegate
+
+    def call(self, in_parameter : unreal.JsonObjectParameter) -> unreal.JsonObjectParameter:
+        return self.delegate(in_parameter)
+    
+
+
 def combine_code_path(root: str, plugin_name: str, relative_path: str) -> str:
     """Combine the code path from the specified root, plugin name and relative path.
     The path should be relative to the Project Source directory.
@@ -37,8 +48,18 @@ def to_py_json(json_obj: unreal.JsonObjectParameter) -> dict:
     return json.loads(parameter_to_string(json_obj))
 
 def call_cpp_tools(function : Callable, params: dict) -> dict:
-    json_params = to_unreal_json(params)
-    return to_py_json(function(json_params))
+    # json_params = to_unreal_json(params)
+    # return to_py_json(function(json_params))
+    str_ret = safe_call_cpp_tools(function, params)
+    return json.loads(str_ret)
+
+def safe_call_cpp_tools(function : Callable, params: dict) -> dict:
+    json_params = json.dumps(params)
+    closure  = UnrealDelegateProxy(function)
+    delegate = unreal.MCPCommandDelegate()
+    delegate.bind_callable(closure.call)
+    return unreal.MCPPythonBridge.safe_call_cpp_function(delegate,json_params)
+    
 
 def like_str_parameter(params:dict | str, name:str, default_value:any) -> any:
     if isinstance(params, dict):

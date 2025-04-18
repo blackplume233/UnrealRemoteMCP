@@ -36,8 +36,10 @@ FJsonObjectParameter UMCPBlueprintTools::HandleCreateBlueprint(const FJsonObject
     FString PackagePath;
     if (!Params->TryGetStringField(TEXT("package_path"), PackagePath))
         PackagePath = TEXT("/Game/Blueprints/");
-    FString AssetName = DefaultPackagePathRoot;
-    if (UEditorAssetLibrary::DoesAssetExist(PackagePath + AssetName))
+    FString AssetName;
+    Params->TryGetStringField(TEXT("package_path"), AssetName);
+    auto FinalPath = FPaths::Combine(PackagePath, AssetName);
+    if (UEditorAssetLibrary::DoesAssetExist(FinalPath))
     {
         return FUnrealMCPCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Blueprint already exists: %s"), *BlueprintName));
     }
@@ -100,7 +102,7 @@ FJsonObjectParameter UMCPBlueprintTools::HandleCreateBlueprint(const FJsonObject
     Factory->ParentClass = SelectedParentClass;
 
     // Create the blueprint
-    UPackage* Package = CreatePackage(*(PackagePath + AssetName));
+    UPackage* Package = CreatePackage(*(FinalPath));
     UBlueprint* NewBlueprint = Cast<UBlueprint>(Factory->FactoryCreateNew(UBlueprint::StaticClass(), Package, *AssetName, RF_Standalone | RF_Public, nullptr, GWarn));
 
     if (NewBlueprint)

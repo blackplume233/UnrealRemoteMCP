@@ -31,3 +31,28 @@ FString UMCPPythonBridge::PluginDirectory(FString PluginName)
 	return IPluginManager::Get().FindPlugin(PluginName)->GetBaseDir();
 }
 
+
+FString UMCPPythonBridge::SafeCallCPPFunction(FMCPCommandDelegate Callable, const FString& Parameter)
+{
+
+	if (!Callable.IsBound())
+	{
+		return "{}";
+	}
+	FJsonObjectParameter JsonObjectParameter{};
+	JsonObjectParameter.JsonObjectFromString(Parameter);
+
+	try
+	{
+		FJsonObjectParameter Result = Callable.Execute(JsonObjectParameter);
+		return Result.ConvertToString();
+	}
+	catch (std::exception e)
+	{
+		auto JsonObject = MakeShared<FJsonObject>();
+		auto Error = FString::Printf(TEXT("Error: %s"), *FString(e.what()));
+		JsonObject->SetStringField(TEXT("error"), Error);
+		return UMCPUtility::ConvertJsonObjectToString(JsonObject);
+	}
+}
+
