@@ -2,7 +2,7 @@
 from foundation.mcp_app import UnrealMCP
 from mcp.server.fastmcp.server import FastMCP
 import unreal
-
+from foundation.utility import like_str_parameter
 def register_common_tools(mcp : UnrealMCP):
     @mcp.tool()
     def test_tool():
@@ -16,6 +16,7 @@ def register_common_tools(mcp : UnrealMCP):
             script (str): The Python script to run. the return of script should can covert to string
         """
         try:
+            script = like_str_parameter(script, "script", "")
             return str(exec(script))
         except Exception as e:
             #unreal.log_error(f"Failed to execute script: {str(e)}")
@@ -30,6 +31,7 @@ def register_common_tools(mcp : UnrealMCP):
             script (str): The Python script to run. the return of script should can covert to string
         """
         try:
+            script = like_str_parameter(script, "script", "")
             return str(exec(script))
         except Exception as e:
             #unreal.log_error(f"Failed to execute script: {str(e)}")
@@ -51,6 +53,7 @@ def register_common_tools(mcp : UnrealMCP):
                 ] :str # The help text for the command.
             }
         """
+        keyword = like_str_parameter(keyword, "keyword", "")
         return unreal.MCPPythonBridge.search_console_commands(keyword)
     @mcp.game_thread_tool()
     def run_console_command(command:str):
@@ -59,6 +62,7 @@ def register_common_tools(mcp : UnrealMCP):
             command (str): The console command to run.
         """
         try:
+            command = like_str_parameter(command, "command", "")
             unreal.SystemLibrary.execute_console_command(unreal.EditorLevelLibrary.get_editor_world(), command)
             return f"Executed console command: {command}"
         except Exception as e:

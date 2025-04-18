@@ -40,4 +40,12 @@ def call_cpp_tools(function : Callable, params: dict) -> dict:
     json_params = to_unreal_json(params)
     return to_py_json(function(json_params))
 
+def like_str_parameter(params:dict | str, name:str, default_value:any) -> any:
+    if isinstance(params, dict):
+        return params.get(name, default_value)
+    elif isinstance(params, str):
+        return default_value
+    else:
+        raise ValueError("Invalid params type. It should be a dictionary or a string.")
+
 
