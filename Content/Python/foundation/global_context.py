@@ -38,8 +38,9 @@ def reload_all_modules():
     exclude_modules = ["foundation.global_context", "foundation.log_handler"]
     # 获取当前工作目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    current_dir = os.path.join(current_dir, "..")
+    current_dir = os.path.abspath(os.path.join(current_dir, ".."))
     lib_dir = os.path.join(current_dir, "Lib")
+    unreal.log(f"reload module from current_dir: {current_dir}")
     # 创建一个固定的模块列表
     modules_to_reload = list(sys.modules.items())
     for name, module in modules_to_reload:

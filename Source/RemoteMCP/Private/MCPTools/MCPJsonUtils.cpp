@@ -12,5 +12,7 @@ FJsonObjectParameter UMCPJsonUtils::MakeJsonObject(const FString& JsonString)
 
 FString UMCPJsonUtils::JsonObjectToString(const FJsonObjectParameter& JsonObject)
 {
-	return JsonObject.JsonString;
+	FString JsonString;
+	JsonObject.JsonObjectToString(JsonString);
+	return JsonString;
 }

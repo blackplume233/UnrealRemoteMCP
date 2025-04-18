@@ -1,4 +1,5 @@
 import json
+from typing import Callable
 import unreal
 def combine_code_path(root: str, plugin_name: str, relative_path: str) -> str:
     """Combine the code path from the specified root, plugin name and relative path.
@@ -34,5 +35,9 @@ def parameter_to_string(json_obj: unreal.JsonObjectParameter) -> str:
 
 def to_py_json(json_obj: unreal.JsonObjectParameter) -> dict:
     return json.loads(parameter_to_string(json_obj))
+
+def call_cpp_tools(function : Callable, params: dict) -> dict:
+    json_params = to_unreal_json(params)
+    return to_py_json(function(json_params))
 
 

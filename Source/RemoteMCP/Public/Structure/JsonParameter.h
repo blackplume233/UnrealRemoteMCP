@@ -28,19 +28,18 @@ public:
 		}
 	}
 
-	FJsonObjectParameter(const TSharedRef<FJsonObject>& Other)
+	FJsonObjectParameter(const TSharedRef<FJsonObject>& Other) : FJsonObjectParameter(Other.ToSharedPtr())
 	{
-		JsonObject = Other;
-		if (JsonObject.IsValid())
-		{
-			JsonObjectToString(JsonString);
-		}
+
 	}
+private:
+	UPROPERTY(EditAnywhere, Category = "JSON")
+	FString JsonString;
 public:
 	REMOTEMCP_API FJsonObjectParameter();
 
-	UPROPERTY(EditAnywhere, Category = "JSON")
-	FString JsonString;
+
+
 
 
 

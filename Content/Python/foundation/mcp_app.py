@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 import os
 import traceback
@@ -14,6 +15,7 @@ import socket
 from foundation import global_context
 max_tick_count = 86400
 
+logger = logging.getLogger()
 class UnrealMCP(FastMCP):
     def __init__(self, name: str | None = None, instructions: str | None = None, **settings: Any):
         super().__init__(name=name, instructions=instructions, **settings)
@@ -143,7 +145,10 @@ class UnrealMCP(FastMCP):
                 future.set_result(result)
                 unreal.log(f"Executed tool: {func.__name__}, Result: {result}")
             except Exception as e:
-                unreal.log_error(f"Error executing tool {func.__name__}: {str(e)}")
+                error_info = f"Error executing tool {func.__name__}: {str(e)}"
+                logger.info(error_info)
+                future.set_result(error_info)
+                return error_info
                 
     async def to_tick_thread(self, func:Callable, *args: Any, **kwargs: Any) -> Any:
         # 将函数添加到任务队列
@@ -155,12 +160,15 @@ class UnrealMCP(FastMCP):
     async def call_tool(self, name: str, arguments: dict[str, Any]) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
         """Call a tool by name with arguments."""
         try:
-            unreal.log(f"call_tool {name} {arguments}" )
+            unreal.log(f"call_tool  {name} {arguments}" )
             if(self._game_thread_tool_set.__contains__(name)):
-                async def wrapped_call_tool(self):
-                    return await super(UnrealMCP, self).call_tool(name, arguments)
+                # 在闭包外获取父类方法的引用
+                parent_call_tool = FastMCP.call_tool
+                # 使用闭包捕获所需的参数和方法
+                async def wrapped_call_tool(self_ref=self, name_ref=name, args_ref=arguments, parent_method=parent_call_tool):
+                    return await parent_method(self_ref, name_ref, args_ref)
                 return await self.to_tick_thread(wrapped_call_tool)
-            return await super().call_tool( name, arguments)
+            return await super().call_tool(name, arguments)
         except Exception as e:
             info = f"Error calling tool {name}: {str(e)}"
             unreal.log_error(info)
