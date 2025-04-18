@@ -82,7 +82,9 @@ public:
 	}
 
 	virtual void Tick(float DeltaTime) override;
+
 #pragma endregion
+	void PostEngineInit();
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
 	UFUNCTION(BlueprintCallable)

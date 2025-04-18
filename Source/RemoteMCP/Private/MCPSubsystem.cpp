@@ -35,13 +35,18 @@ void UMCPSubsystem::Tick(float DeltaTime)
 	}
 }
 
-void UMCPSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+void UMCPSubsystem::PostEngineInit()
 {
-	Super::Initialize(Collection);
 	if (GetDefault<UMCPSetting>()->bAutoStart)
 	{
 		StartMCP();
 	}
+}
+
+void UMCPSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+	FCoreDelegates::OnFEngineLoopInitComplete.AddUObject(this, &UMCPSubsystem::PostEngineInit);
 }
 
 void UMCPSubsystem::SetupObject(FMCPObject Context)

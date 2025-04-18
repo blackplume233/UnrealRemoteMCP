@@ -26,13 +26,13 @@ def to_unreal_json(data: dict) -> unreal.JsonObjectParameter:
     string_data = json.dumps(data)
     return unreal.MCPJsonUtils.make_json_object(string_data)
 
-def to_unreal_json(string_data: str) -> unreal.JsonObjectParameter:
+def str_to_unreal_json(string_data: str) -> unreal.JsonObjectParameter:
     return unreal.MCPJsonUtils.make_json_object(string_data)
 
-def to_string(json_obj: unreal.JsonObjectParameter) -> str:
+def parameter_to_string(json_obj: unreal.JsonObjectParameter) -> str:
     return unreal.MCPJsonUtils.json_object_to_string(json_obj)
 
 def to_py_json(json_obj: unreal.JsonObjectParameter) -> dict:
-    return json.loads(to_string(json_obj))
+    return json.loads(parameter_to_string(json_obj))
 
 

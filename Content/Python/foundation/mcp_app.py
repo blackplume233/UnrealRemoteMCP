@@ -147,20 +147,24 @@ class UnrealMCP(FastMCP):
                 
     async def to_tick_thread(self, func:Callable, *args: Any, **kwargs: Any) -> Any:
         # 将函数添加到任务队列
-        unreal.log("Add task to queue")
+        unreal.log("Add task to game thread task queue")
         future = asyncio.Future()
         await self.task_queue.put((func, args, kwargs, future))
         return await future
     
     async def call_tool(self, name: str, arguments: dict[str, Any]) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
         """Call a tool by name with arguments."""
-        if(self._game_thread_tool_set.__contains__(name)):
-            unreal.log("run game thread tool {name}")
-            async def wrapped_call_tool():
-                return await super(UnrealMCP, self).call_tool(name, arguments)
-            return await self.to_tick_thread(wrapped_call_tool)
-        unreal.log(f"run common tool {name} {arguments}")
-        return await super().call_tool( name, arguments)
+        try:
+            unreal.log(f"call_tool {name} {arguments}" )
+            if(self._game_thread_tool_set.__contains__(name)):
+                async def wrapped_call_tool(self):
+                    return await super(UnrealMCP, self).call_tool(name, arguments)
+                return await self.to_tick_thread(wrapped_call_tool)
+            return await super().call_tool( name, arguments)
+        except Exception as e:
+            info = f"Error calling tool {name}: {str(e)}"
+            unreal.log_error(info)
+            return info
     
     
     def game_thread_tool(
