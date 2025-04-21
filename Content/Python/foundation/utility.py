@@ -23,7 +23,7 @@ def combine_code_path(root: str, plugin_name: str, relative_path: str) -> str:
     source_path : str = "Source"
     base_path : str = None
     if plugin_name is None or plugin_name is "":
-        base_path = unreal.MCPPythonBridge.PluginDirectory(plugin_name)
+        base_path = unreal.MCPPythonBridge.plugin_directory(plugin_name)
         base_path = unreal.Paths.combine(base_path, source_path)
     elif root == "Project":
         base_path= unreal.Paths.game_source_dir()
