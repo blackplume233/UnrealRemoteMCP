@@ -44,6 +44,7 @@ public:
 
 #pragma endregion
 	void PostEngineInit();
+	void PostPythonInit();
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
 	UFUNCTION(BlueprintCallable)

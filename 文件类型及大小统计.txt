@@ -1,0 +1,51 @@
+--------------------------------------------------------------
+   Type   |  Size Count(Top 300)  |   File Count   |   File Extension 
+--------------------------------------------------------------
+  Binary        234.63 MB             5 files       *.pdb
+  Binary         44.62 MB            40 files       *.obj
+  Binary          5.02 MB             1 files       *.pyd
+  Text            4.62 MB           423 files       *.py
+  Binary          3.80 MB           247 files       *.pyc
+  Binary          1.76 MB             3 files       *.dll
+  Text          472.15 KB            32 files       *.cpp
+  Text          442.80 KB             9 files       *.md
+  Binary        343.23 KB             6 files       *.exp
+  Binary        298.90 KB             4 files       *.lib
+  Binary        297.23 KB             6 files       *.exe
+  Text          290.29 KB             1 files       *.pem
+  ?             240.78 KB            21 files       METADATA
+  Text          225.01 KB            44 files       *.json
+  ?             117.79 KB            43 files       *.rsp
+  Text           63.08 KB            30 files       *.h
+  ?              56.79 KB             1 files       *.gitattributes
+  ?              52.09 KB             2 files       *.pyi
+  Binary         49.31 KB             2 files       *.png
+  Binary         48.87 KB             2 files       *.res
+  ?              46.63 KB            21 files       RECORD
+  Binary         42.11 KB             1 files       *.uasset
+  ?              39.43 KB            10 files       *.old
+  ?              26.25 KB            13 files       LICENSE
+  ?              19.55 KB            35 files       *.sarif
+  ?              11.09 KB             1 files       *.APACHE2
+  ?               8.92 KB             5 files       *.lc
+  Text            4.26 KB            15 files       *.txt
+  ?               1.83 KB            21 files       WHEEL
+  Text            1.58 KB             1 files       *.cs
+  ?               1.39 KB             2 files       *.gitignore
+  ?               1.02 KB             1 files       *.MIT
+  ?               0.97 KB             1 files       Timestamp
+  ?               0.53 KB             1 files       *.uplugin
+  ?               0.46 KB             1 files       *.mdc
+  ?               0.39 KB             1 files       AUTHORS
+  ?               0.32 KB             1 files       *.code-workspace
+  ?               0.31 KB             1 files       *.toml
+  Text            0.31 KB             1 files       *.svg
+  ?               0.20 KB             2 files       *.modules
+  Text            0.18 KB             2 files       *.bat
+  ?               0.12 KB             2 files       *.lock
+  ?               0.06 KB             1 files       test-file
+  ?               0.04 KB            21 files       INSTALLER
+  ?               0.03 KB            20 files       *.typed
+  ?               0.01 KB             1 files       *.python-version
+  ?               0.00 KB            21 files       REQUESTED
+

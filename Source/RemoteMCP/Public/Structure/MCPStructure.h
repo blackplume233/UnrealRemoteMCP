@@ -51,6 +51,6 @@ public:
 
 	bool Valid() const
 	{
-		return PythonObjectHandle != nullptr;
+		return PythonObjectHandle.Get() != nullptr;
 	}
 };

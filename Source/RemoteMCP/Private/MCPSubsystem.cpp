@@ -37,6 +37,17 @@ void UMCPSubsystem::Tick(float DeltaTime)
 
 void UMCPSubsystem::PostEngineInit()
 {
+	if (IPythonScriptPlugin::Get()->IsPythonInitialized()) {
+		PostPythonInit();
+	}
+	else {
+		IPythonScriptPlugin::Get()->OnPythonInitialized().AddUObject(this, &UMCPSubsystem::PostEngineInit);
+	}
+	
+}
+
+void UMCPSubsystem::PostPythonInit()
+{
 	if (GetDefault<UMCPSetting>()->bAutoStart)
 	{
 		StartMCP();
@@ -46,6 +57,7 @@ void UMCPSubsystem::PostEngineInit()
 void UMCPSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
+	
 	FCoreDelegates::OnFEngineLoopInitComplete.AddUObject(this, &UMCPSubsystem::PostEngineInit);
 }
 
@@ -53,6 +65,8 @@ void UMCPSubsystem::SetupObject(FMCPObject Context)
 {
 	this->MCPContext = Context;
 	WaitStart = true;
+
+
 }
 
 void UMCPSubsystem::ClearObject()
@@ -68,12 +82,21 @@ void UMCPSubsystem::StartMCP()
 		UE_LOG(LogTemp, Error, TEXT("MCP Already Running"));
 		return;
 	}
-	RunTread = Async(EAsyncExecution::Thread, []()
+
+	//auto Command = TEXT("init_mcp.py");
+	FPythonCommandEx CommandEx ;
+	CommandEx.Command = TEXT("init_mcp.py");
+	CommandEx.FileExecutionScope = EPythonFileExecutionScope::Private;
+	IPythonScriptPlugin::Get()->ExecPythonCommandEx(CommandEx);
+	if (MCPContext.Valid())
 	{
-		// Your code to start the MCP goes here
-		auto Command = TEXT("init_mcp.py");
-		IPythonScriptPlugin::Get()->ExecPythonCommand(Command);
-	});
+		RunTread = Async(EAsyncExecution::Thread, [this]()
+			{
+				// Your code to start the MCP goes here
+				MCPContext.Bridge.Execute(EMCPBridgeFuncType::Start, TEXT("MCP Start"));
+			});
+	}
+
 	// auto Command = TEXT("init_mcp.py");
 	// IPythonScriptPlugin::Get()->ExecPythonCommand(Command);
 
@@ -81,8 +104,9 @@ void UMCPSubsystem::StartMCP()
 
 void UMCPSubsystem::StopMCP()
 {
-	if (!MCPContext.Valid()) return;
-	auto _= MCPContext.Bridge.Execute(EMCPBridgeFuncType::Exit, TEXT("MCP Stopped"));
+	if (!MCPContext.Valid() ) return;
+	if(MCPContext.Bridge.IsBound())
+		auto _= MCPContext.Bridge.Execute(EMCPBridgeFuncType::Exit, TEXT("MCP Stopped"));
 	RunTread.Wait();
 	//ClearObject();
 }

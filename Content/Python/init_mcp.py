@@ -33,11 +33,10 @@ setting : unreal.MCPSetting = unreal.get_default_object(unreal.MCPSetting)
 #global_context.rebuild_event_loop()
 
 mcp = UnrealMCP("Remote Unreal MCP",port=setting.port)
-
-
 common_register.register_common_tools(mcp)
 resource_register.register_resource(mcp)
 edit_register.register_edit_tool(mcp)
 
 mcp.run()
 
+foundation.mcp_app.global_mcp = mcp

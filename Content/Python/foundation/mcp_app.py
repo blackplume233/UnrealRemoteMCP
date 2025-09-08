@@ -17,6 +17,8 @@ max_tick_count = 86400
 
 logger = logging.getLogger()
 class UnrealMCP(FastMCP):
+    
+
     def __init__(self, name: str | None = None, instructions: str | None = None, **settings: Any):
         super().__init__(name=name, instructions=instructions, **settings)
     
@@ -34,14 +36,15 @@ class UnrealMCP(FastMCP):
         # 运行函数
         loop = global_context.get_event_loop()
         loop.run_until_complete(function())
+        unreal.log("MCP complete run")
         pass
 
     def run(self):
-        self.sync_run_func(self.async_run)
-        unreal.log("MCP complete run")
+        self.init_bridge()
+        
 
     async def async_run(self):
-        self.init_bridge()
+        # self.init_bridge()
         # await self.init_server()
         # await self.server._serve()
         
@@ -85,6 +88,7 @@ class UnrealMCP(FastMCP):
             self.should_exit = True
             self.clear_bridge()
         if type == unreal.MCPBridgeFuncType.START:
+            self.sync_run_func(self.async_run)()
             pass
 
     async def init_server(self) -> None:
@@ -200,4 +204,4 @@ class UnrealMCP(FastMCP):
         return decorator
 
 
-
+global_mcp:UnrealMCP = None

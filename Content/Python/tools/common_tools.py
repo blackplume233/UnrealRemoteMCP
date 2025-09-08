@@ -22,20 +22,20 @@ def register_common_tools(mcp : UnrealMCP):
             #unreal.log_error(f"Failed to execute script: {str(e)}")
             return f"Script execution failed. {str(e)}"
 
-    @mcp.tool()
-    def async_run_python_script(script: str):
-        """
-        Important: This function is not run in the game thread.
-        Run a Python script in the Unreal Engine editor.
-        Args:
-            script (str): The Python script to run. the return of script should can covert to string
-        """
-        try:
-            script = like_str_parameter(script, "script", "")
-            return str(exec(script))
-        except Exception as e:
-            #unreal.log_error(f"Failed to execute script: {str(e)}")
-            return f"Script execution failed. {str(e)}"
+    # @mcp.tool()
+    # def async_run_python_script(script: str):
+    #     """
+    #     Important: This function is not run in the game thread.
+    #     Run a Python script in the Unreal Engine editor.
+    #     Args:
+    #         script (str): The Python script to run. the return of script should can covert to string
+    #     """
+    #     try:
+    #         script = like_str_parameter(script, "script", "")
+    #         return str(exec(script))
+    #     except Exception as e:
+    #         #unreal.log_error(f"Failed to execute script: {str(e)}")
+    #         return f"Script execution failed. {str(e)}"
     @mcp.game_thread_tool()
     def search_console_commands(keyword: str):
         """Search the console commands by a specific keyword.

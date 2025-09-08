@@ -8,6 +8,7 @@ import os
 counter = 0# Static counter variable
 loop = asyncio.SelectorEventLoop()
 
+
 def get_counter() -> int:
     """Get the current value of the static counter."""
     global counter
