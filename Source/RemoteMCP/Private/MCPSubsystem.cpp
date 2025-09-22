@@ -105,9 +105,11 @@ void UMCPSubsystem::StartMCP()
 void UMCPSubsystem::StopMCP()
 {
 	if (!MCPContext.Valid() ) return;
-	if(MCPContext.Bridge.IsBound())
-		auto _= MCPContext.Bridge.Execute(EMCPBridgeFuncType::Exit, TEXT("MCP Stopped"));
-	RunTread.Wait();
+	if (MCPContext.Bridge.IsBound()) {
+		auto _ = MCPContext.Bridge.Execute(EMCPBridgeFuncType::Exit, TEXT("MCP Stopped"));
+		RunTread.WaitFor(FTimespan::FromSeconds(10));
+	}
+
 	//ClearObject();
 }
 

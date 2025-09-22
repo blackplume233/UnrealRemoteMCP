@@ -36,7 +36,7 @@ def register_edit_tool( mcp:UnrealMCP):
         Args:
             ctx: The MCP context
             name: The name to give the new actor (must be unique)
-            type: The type of actor to create (e.g. StaticMeshActor, PointLight)
+            type: The blueprint path of actor to create 
             location: The [x, y, z] world location to spawn at
             rotation: The [pitch, yaw, roll] rotation in degrees
             
@@ -49,7 +49,9 @@ def register_edit_tool( mcp:UnrealMCP):
                     "location": location,
                     "rotation": rotation
         }
-        return unreal_utility.to_py_json(unreal.MCPEditorTools.handle_spawn_actor(params))
+        # unreal.JsonObjectParameter JsonParams = 
+        json_params = unreal_utility.to_unreal_json(params)
+        return unreal_utility.to_py_json(unreal.MCPEditorTools.handle_spawn_actor(str(json_params)).ConvertToString())
     
     @mcp.game_thread_tool()
     def delete_actor(ctx: Context, name: str) -> Dict[str, Any]:

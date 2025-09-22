@@ -129,7 +129,7 @@ class UnrealMCP(FastMCP):
         await self.tick()
         self.server.force_exit = True
         await self.server.shutdown(sockets=None)
-        self.clear_bridge()
+        # self.clear_bridge()
         unreal.log("Server stopped " + str(self.uuid))
 
     async def tick(self) -> bool:
