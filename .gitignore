@@ -89,3 +89,4 @@ Plugins/UnrealImGui
 Package
 Content/Python/.cursor
 Content/Python/.vscode
+Content/Python/Lib/site-packages
