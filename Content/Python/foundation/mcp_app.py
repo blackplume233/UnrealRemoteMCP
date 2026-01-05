@@ -94,7 +94,7 @@ class UnrealMCP(FastMCP):
 
     async def init_server(self) -> None:
         """Run the server using SSE transport."""
-        starlette_app = self.sse_app()
+        starlette_app = self.streamable_http_app()
 
         config = uvicorn.Config(
             starlette_app,
