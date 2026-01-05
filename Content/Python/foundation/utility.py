@@ -1,5 +1,6 @@
 import json
-from typing import Any, Callable
+from typing import Any, Callable,Optional
+
 import unreal
 
 
@@ -21,10 +22,10 @@ def combine_code_path(root: str, plugin_name: str, relative_path: str) -> str:
         relative_path: The relative path to the file from the Project Source directory.
     """
     source_path : str = "Source"
-    base_path : str = None
+    base_path : Optional[str] = None
     if plugin_name is None or plugin_name is "":
         base_path = unreal.MCPPythonBridge.plugin_directory(plugin_name)
-        base_path = unreal.Paths.combine(base_path, source_path)
+        base_path = unreal.Paths.combine(base_path, source_path) # type: ignore
     elif root == "Project":
         base_path= unreal.Paths.game_source_dir()
     elif root == "Engine":
