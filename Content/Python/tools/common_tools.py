@@ -91,7 +91,8 @@ def register_common_tools(mcp : UnrealMCP):
             command = like_str_parameter(command, "command", "")
             unreal.log(command)
             with LogCaptureScope() as log_capture:
-                unreal.SystemLibrary.execute_console_command(unreal.EditorLevelLibrary.get_game_world(), command)
+                editor_subsystem : unreal.UnrealEditorSubsystem  = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
+                unreal.SystemLibrary.execute_console_command(editor_subsystem.get_game_world(), command)
             return f"Executed console command: {command}/ {log_capture.get_logs()} "
         except Exception as e:
             unreal.log_error(f"Failed to execute console command: {str(e)}")
