@@ -46,5 +46,5 @@ common_register.register_common_tools(mcp)
 resource_register.register_resource(mcp)
 edit_register.register_edit_tool(mcp)
 
-mcp.run()
+mcp.init_unreal_mcp()
 

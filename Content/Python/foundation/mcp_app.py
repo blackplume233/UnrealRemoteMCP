@@ -3,7 +3,7 @@ import logging
 import time
 import os
 import traceback
-from typing import Any, Awaitable, Callable, Sequence
+from typing import Any, Awaitable, Callable, Sequence, Optional
 import uuid
 import anyio
 from mcp.types import AnyFunction, EmbeddedResource, ImageContent, TextContent
@@ -22,7 +22,7 @@ class UnrealMCP(FastMCP):
     def __init__(self, name: str | None = None, instructions: str | None = None, **settings: Any):
         super().__init__(name=name, instructions=instructions, **settings)
     
-        self.server = None
+        # self.server : uvicorn.Server | None = None
         self.force_exit = False
         self.tick_count = 0
         self.should_exit = False
@@ -39,7 +39,7 @@ class UnrealMCP(FastMCP):
         unreal.log("MCP complete run")
         pass
 
-    def run(self):
+    def init_unreal_mcp(self):
         self.init_bridge()
         
 
@@ -69,18 +69,19 @@ class UnrealMCP(FastMCP):
         pass
          
     def init_bridge(self):
+        uuid_str : str = str(self.uuid)
         context = unreal.MCPObject()
         context.bridge = unreal.MCPBridgeFuncDelegate()
         context.bridge.bind_callable(self.on_bridge)
         context.tick = unreal.MCPObjectEventFunction()
         context.tick.bind_callable(self.sync_tick)
-        context.guid = str(self.uuid)
+        context.guid = uuid_str # type: ignore
         context.python_object_handle = unreal.create_python_object_handle(self)
-        unreal.get_editor_subsystem(unreal.MCPSubsystem).setup_object(context)
+        unreal.get_editor_subsystem(unreal.MCPSubsystem).setup_object(context) # type: ignore
         unreal.log("Bridge setup " + str(self.uuid))
 
     def clear_bridge(self):
-        unreal.get_editor_subsystem(unreal.MCPSubsystem).clear_object()
+        unreal.get_editor_subsystem(unreal.MCPSubsystem).clear_object() # type: ignore
 
     def on_bridge(self, type: unreal.MCPBridgeFuncType, message: str):
         unreal.log("Bridge Message: " + message)
@@ -88,7 +89,7 @@ class UnrealMCP(FastMCP):
             self.should_exit = True
             self.clear_bridge()
         if type == unreal.MCPBridgeFuncType.START:
-            self.sync_run_func(self.async_run)()
+            self.sync_run_func(self.async_run)
             pass
 
     async def init_server(self) -> None:
@@ -138,7 +139,7 @@ class UnrealMCP(FastMCP):
         await self.do_task()
         return True
     
-    async def do_task(self) -> None:
+    async def do_task(self) -> Any:
         # 运行任务
          while not self.task_queue.empty():
             func, args, kwargs,future = await self.task_queue.get()
@@ -161,7 +162,7 @@ class UnrealMCP(FastMCP):
         await self.task_queue.put((func, args, kwargs, future))
         return await future
     
-    async def call_tool(self, name: str, arguments: dict[str, Any]) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+    async def call_tool(self, name: str, arguments: dict[str, Any]) -> Sequence[TextContent | ImageContent | EmbeddedResource] | Any:
         """Call a tool by name with arguments."""
         try:
             unreal.log(f"call_tool  {name} {arguments}" )
@@ -204,4 +205,4 @@ class UnrealMCP(FastMCP):
         return decorator
 
 
-global_mcp:UnrealMCP = None
+global_mcp: Optional[UnrealMCP] = None

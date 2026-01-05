@@ -1,5 +1,5 @@
 import json
-from typing import Callable
+from typing import Any, Callable
 import unreal
 
 
@@ -53,15 +53,15 @@ def call_cpp_tools(function : Callable, params: dict) -> dict:
     str_ret = safe_call_cpp_tools(function, params)
     return json.loads(str_ret)
 
-def safe_call_cpp_tools(function : Callable, params: dict) -> dict:
+def safe_call_cpp_tools(function : Callable, params: dict) -> str:
     json_params = json.dumps(params)
     closure  = UnrealDelegateProxy(function)
     delegate = unreal.MCPCommandDelegate()
     delegate.bind_callable(closure.call)
-    return unreal.MCPPythonBridge.safe_call_cpp_function(delegate,json_params)
+    return unreal.MCPPythonBridge.safe_call_cpp_function(delegate,json_params) # type: ignore
     
 
-def like_str_parameter(params:dict | str, name:str, default_value:any) -> any:
+def like_str_parameter(params:dict | str, name:str, default_value:Any) -> Any:
     if isinstance(params, dict):
         return params.get(name, default_value)
     elif isinstance(params, str):
