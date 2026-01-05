@@ -63,6 +63,38 @@ def register_common_tools(mcp : UnrealMCP):
             return 0
 ```
 
+# 项目结构
+```
+RemoteMCP
+├── Content
+│   ├── EditorUI
+│   │   └── MainPanel.uasset
+│   └── Python
+│       ├── foundation
+│       │   ├── global_context.py
+│       │   ├── log_handler.py
+│       │   ├── mcp_app.py
+│       │   └── utility.py
+│       ├── tools
+│       │   └── common_tools.py
+│       ├── env.bat
+│       ├── init_mcp.py
+│       ├── inspector.bat
+│       └── unreal_python_tools.py
+├── Resources
+│   └── plugin_image.png
+├── Source
+│   └── RemoteMCP
+│       ├── Private
+│       │   └── RemoteMCP.cpp
+│       └── Public
+│           ├── RemoteMCP.h
+│           └── Settings.h
+├── PromptCase.md
+├── README.md
+└── RemoteMCP.uplugin
+```
+
 # 许可证
 此项目基于 MIT 许可证开源。详情请参阅 LICENSE 文件。
 
