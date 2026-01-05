@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 from foundation.mcp_app import UnrealMCP
 from mcp.server.fastmcp import Context
 import unreal
+
 import foundation.utility as unreal_utility
 from foundation.utility import call_cpp_tools
 
@@ -9,19 +10,139 @@ from foundation.utility import call_cpp_tools
 # tools reference  https://github.com/chongdashu/unreal-mcp
 def register_edit_tool( mcp:UnrealMCP):
     """Register editor tools with the MCP server."""
+
+    @mcp.tool()
+    def all_unreal_api_path(ctx: Context) : 
+        """get a file path  include all unreal api"""
+        return "D:\\KLWorkspace\\Project\\Project\\Intermediate\\PythonStub\\unreal.py"
+
+
+    @mcp.game_thread_tool()
+    def test_engine_state(ctx: Context) :
+        """测试连接状态"""
+        return {"running"}
+
+
     @mcp.game_thread_tool()
     def get_actors_in_level(ctx: Context) -> List[Dict[str, Any]]:
         """Get a list of all actors in the current level."""
-        all_actors = unreal.MCPEditorTools.handle_get_actors_in_level(unreal_utility.to_unreal_json({}))
-        return unreal_utility.to_py_json(all_actors)
+        try:
+            # 使用纯Python实现获取所有Actor
+            all_actors = unreal.EditorLevelLibrary.get_all_level_actors()
+            
+            actors_info = []
+            for actor in all_actors:
+                if actor:
+                    actor_info = {
+                        "name": actor.get_name(),
+                        "path": actor.get_path_name(),
+                        "class": actor.get_class().get_name(),
+                        "location": [
+                            actor.get_actor_location().x, 
+                            actor.get_actor_location().y, 
+                            actor.get_actor_location().z
+                        ],
+                        "rotation": [
+                            actor.get_actor_rotation().pitch, 
+                            actor.get_actor_rotation().yaw, 
+                            actor.get_actor_rotation().roll
+                        ],
+                        "scale": [
+                            actor.get_actor_scale3d().x, 
+                            actor.get_actor_scale3d().y, 
+                            actor.get_actor_scale3d().z
+                        ]
+                    }
+                    actors_info.append(actor_info)
+            
+            unreal.log(f"Found {len(actors_info)} actors in level")
+            return actors_info
+            
+        except Exception as e:
+            unreal.log_error(f"Error getting actors in level: {e}")
+            return {"error": str(e), "actors": []}
     
     @mcp.game_thread_tool()
-    def find_actors_by_name(ctx: Context, pattern: str) -> List[str]:
-        """Find actors by name pattern."""
-        param = {"pattern": pattern}
-        all_actors = unreal.MCPEditorTools.handle_get_actors_in_level(unreal_utility.to_unreal_json(param))
-        return unreal_utility.to_py_json(all_actors)
-        
+    def get_actors_detail_info(ctx: Context, actor_name : str) -> Dict:
+        """Get detailed information of the specified actor by name, including its basic properties and all component properties."""
+        try:
+            all_actors = unreal.EditorLevelLibrary.get_all_level_actors()
+
+            # INSERT_YOUR_CODE
+            # 判断路径中是否包含对应名字
+            matched_actors = []
+            for ac in all_actors:
+                path = ac.get_path_name()
+                if actor_name in path:
+                    matched_actors.append(ac)
+                    break
+            actor = matched_actors
+            if not actor or len(actor) == 0:
+                return {"error": "Actor not found", "actor": actor_name}
+            unreal.log("XXXXX")
+            actor = actor[0]
+            # INSERT_YOUR_CODE
+            # 实现逐组件逐属性的Json化
+            actor_info = {
+                "name": actor.get_name(),
+                "path": actor.get_path_name(),
+                "class": actor.get_class().get_name(),
+                "location": [
+                    actor.get_actor_location().x,
+                    actor.get_actor_location().y,
+                    actor.get_actor_location().z
+                ],
+                "rotation": [
+                    actor.get_actor_rotation().pitch,
+                    actor.get_actor_rotation().yaw,
+                    actor.get_actor_rotation().roll
+                ],
+                "scale": [
+                    actor.get_actor_scale3d().x,
+                    actor.get_actor_scale3d().y,
+                    actor.get_actor_scale3d().z
+                ],
+                "components": []
+            }
+
+            # 获取所有组件
+            components = actor.get_components_by_class(unreal.ActorComponent)
+            for comp in components:
+                comp_info = {
+                    "name": comp.get_name(),
+                    "class": comp.get_class().get_name(),
+                    "properties": {}
+                }
+                # 获取所有属性
+                # 只获取public属性
+                try:
+                    # 获取属性名列表
+                    prop_names = [desc.get_name() for desc in comp.get_class().get_properties()]
+                    for prop_name in prop_names:
+                        try:
+                            value = getattr(comp, prop_name)
+                            # 尝试序列化为基本类型
+                            if isinstance(value, (int, float, str, bool, list, dict, type(None))):
+                                comp_info["properties"][prop_name] = value
+                            elif hasattr(value, "to_tuple"):
+                                comp_info["properties"][prop_name] = value.to_tuple()
+                            elif hasattr(value, "get_name"):
+                                comp_info["properties"][prop_name] = value.get_name()
+                            else:
+                                comp_info["properties"][prop_name] = str(value)
+                        except Exception as e:
+                            comp_info["properties"][prop_name] = f"<无法获取: {e}>"
+                except Exception as e:
+                    comp_info["properties"] = f"<无法获取属性: {e}>"
+                actor_info["components"].append(comp_info)
+
+            return actor_info
+            
+        except Exception as e:
+            unreal.log_error(f"Error getting actors in level: {e}")
+            return {"error": str(e), "actors": []}
+
+
     
     @mcp.game_thread_tool()
     def spawn_actor(
@@ -36,7 +157,7 @@ def register_edit_tool( mcp:UnrealMCP):
         Args:
             ctx: The MCP context
             name: The name to give the new actor (must be unique)
-            type: The blueprint path of actor to create 
+            type: The type of actor to create (e.g. StaticMeshActor, PointLight)
             location: The [x, y, z] world location to spawn at
             rotation: The [pitch, yaw, roll] rotation in degrees
             
@@ -49,9 +170,7 @@ def register_edit_tool( mcp:UnrealMCP):
                     "location": location,
                     "rotation": rotation
         }
-        # unreal.JsonObjectParameter JsonParams = 
-        json_params = unreal_utility.to_unreal_json(params)
-        return unreal_utility.to_py_json(unreal.MCPEditorTools.handle_spawn_actor(str(json_params)).ConvertToString())
+        return unreal_utility.to_py_json(unreal.MCPEditorTools.handle_spawn_actor(params))
     
     @mcp.game_thread_tool()
     def delete_actor(ctx: Context, name: str) -> Dict[str, Any]:

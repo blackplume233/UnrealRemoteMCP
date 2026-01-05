@@ -12,6 +12,7 @@
 #include "Widgets/Text/STextBlock.h"
 #include "ToolMenus.h"
 #include "MCPMisc.h"
+#include "MCPTools/LogCapture.h"
 
 class UEditorUtilitySubsystem;
 class UEditorUtilityWidget;
@@ -104,7 +105,7 @@ namespace MCPCommand
 		})
 	};
 }
-
+static FLogCaptureDevice* Device = nullptr;
 void FRemoteMCPModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
@@ -127,6 +128,8 @@ void FRemoteMCPModule::StartupModule()
 		.SetDisplayName(LOCTEXT("FRemoteMCPTabTitle", "RemoteMCP"))
 		.SetMenuType(ETabSpawnerMenuType::Hidden);
 
+	Device = new FLogCaptureDevice(); 
+	GLog->AddOutputDevice(Device);
 	//RegisterCommand();
 }
 

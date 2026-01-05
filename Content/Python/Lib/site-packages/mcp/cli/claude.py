@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -20,15 +21,24 @@ def get_claude_config_path() -> Path | None:
     elif sys.platform == "darwin":
         path = Path(Path.home(), "Library", "Application Support", "Claude")
     elif sys.platform.startswith("linux"):
-        path = Path(
-            os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"), "Claude"
-        )
+        path = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"), "Claude")
     else:
         return None
 
     if path.exists():
         return path
     return None
+
+
+def get_uv_path() -> str:
+    """Get the full path to the uv executable."""
+    uv_path = shutil.which("uv")
+    if not uv_path:
+        logger.error(
+            "uv executable not found in PATH, falling back to 'uv'. Please ensure uv is installed and in your PATH"
+        )
+        return "uv"  # Fall back to just "uv" if not found
+    return uv_path
 
 
 def update_claude_config(
@@ -54,6 +64,7 @@ def update_claude_config(
             Claude Desktop may not be installed or properly set up.
     """
     config_dir = get_claude_config_path()
+    uv_path = get_uv_path()
     if not config_dir:
         raise RuntimeError(
             "Claude Desktop config directory not found. Please ensure Claude Desktop"
@@ -64,11 +75,10 @@ def update_claude_config(
     if not config_file.exists():
         try:
             config_file.write_text("{}")
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Failed to create Claude config file",
                 extra={
-                    "error": str(e),
                     "config_file": str(config_file),
                 },
             )
@@ -80,10 +90,7 @@ def update_claude_config(
             config["mcpServers"] = {}
 
         # Always preserve existing env vars and merge with new ones
-        if (
-            server_name in config["mcpServers"]
-            and "env" in config["mcpServers"][server_name]
-        ):
+        if server_name in config["mcpServers"] and "env" in config["mcpServers"][server_name]:
             existing_env = config["mcpServers"][server_name]["env"]
             if env_vars:
                 # New vars take precedence over existing ones
@@ -117,7 +124,7 @@ def update_claude_config(
         # Add fastmcp run command
         args.extend(["mcp", "run", file_spec])
 
-        server_config: dict[str, Any] = {"command": "uv", "args": args}
+        server_config: dict[str, Any] = {"command": uv_path, "args": args}
 
         # Add environment variables if specified
         if env_vars:
@@ -131,11 +138,10 @@ def update_claude_config(
             extra={"config_file": str(config_file)},
         )
         return True
-    except Exception as e:
-        logger.error(
+    except Exception:
+        logger.exception(
             "Failed to update Claude config",
             extra={
-                "error": str(e),
                 "config_file": str(config_file),
             },
         )

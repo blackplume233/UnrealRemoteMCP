@@ -18,5 +18,5 @@ public:
 	UPROPERTY(Config, BlueprintReadWrite, EditAnywhere, Category = "MCP")
 	int Port = 8422;
 	UPROPERTY(Config, BlueprintReadWrite, EditAnywhere, Category = "MCP")
-	bool bAutoStart = true;
+	bool bAutoStart = false;
 };

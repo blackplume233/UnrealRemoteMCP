@@ -65,7 +65,7 @@ def like_str_parameter(params:dict | str, name:str, default_value:any) -> any:
     if isinstance(params, dict):
         return params.get(name, default_value)
     elif isinstance(params, str):
-        return default_value
+        return params
     else:
         raise ValueError("Invalid params type. It should be a dictionary or a string.")
 

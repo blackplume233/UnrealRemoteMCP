@@ -3,17 +3,24 @@ import importlib
 import unreal
 import os
 
-sys.path.append("Lib/site-packages")
+# sys.path.append("Lib/site-packages")
 
 from foundation import log_handler
 # importlib.reload(log_handler)
 
 #unreal.log("Logging Initialized")
 
-import foundation.mcp_app
+# import foundation.mcp_app
 # importlib.reload(foundation.mcp_app)
 import warnings
-from foundation.mcp_app import UnrealMCP
+try:
+    from foundation.mcp_app import UnrealMCP
+except Exception as e:
+    import traceback
+    unreal.log_error(f"Failed to import foundation.mcp_app: {str(e)}")
+    unreal.log_error(traceback.format_exc())
+    raise e
+
 from foundation import global_context
 import tools.common_tools as common_register
 import tools.resource as resource_register
@@ -32,11 +39,12 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, message="Accessin
 setting : unreal.MCPSetting = unreal.get_default_object(unreal.MCPSetting)
 #global_context.rebuild_event_loop()
 
-mcp = UnrealMCP("Remote Unreal MCP",port=setting.port)
+mcp = UnrealMCP("Remote Unreal MCP", host="0.0.0.0", port=setting.port)
+
+
 common_register.register_common_tools(mcp)
 resource_register.register_resource(mcp)
 edit_register.register_edit_tool(mcp)
 
 mcp.run()
 
-foundation.mcp_app.global_mcp = mcp

@@ -24,6 +24,8 @@ private:
 
 	UFUNCTION(BlueprintCallable, Category="MCP")
 	static FString SafeCallCPPFunction(FMCPCommandDelegate Callable, const FString& Parameter);
+	
+
 #pragma region Blueprint
 
 #pragma endregion
