@@ -37,12 +37,17 @@ void UMCPSubsystem::Tick(float DeltaTime)
 
 void UMCPSubsystem::PostEngineInit()
 {
+#if ENGINE_MINOR_VERSION >= 7
 	if (IPythonScriptPlugin::Get()->IsPythonInitialized()) {
 		PostPythonInit();
 	}
-	else {
+	else 
+	{
 		IPythonScriptPlugin::Get()->OnPythonInitialized().AddUObject(this, &UMCPSubsystem::PostEngineInit);
 	}
+#else
+	PostPythonInit();
+#endif
 	
 }
 
@@ -57,8 +62,8 @@ void UMCPSubsystem::PostPythonInit()
 void UMCPSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-	
-	FCoreDelegates::OnFEngineLoopInitComplete.AddUObject(this, &UMCPSubsystem::PostEngineInit);
+	//FCoreDelegates::OnPostEngineInit.AddUObject(this, &UMCPSubsystem::PostEngineInit);
+	UMCPSubsystem::PostEngineInit();
 }
 
 void UMCPSubsystem::SetupObject(FMCPObject Context)

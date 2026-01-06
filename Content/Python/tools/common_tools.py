@@ -1,4 +1,5 @@
 
+from asyncio.windows_events import NULL
 import time
 from typing import Dict, List, Optional
 from foundation.log_handler import LogCaptureScope
@@ -84,7 +85,14 @@ def register_common_tools(mcp : UnrealMCP):
             unreal.log(command)
             
             editor_subsystem : unreal.UnrealEditorSubsystem  = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
-            unreal.SystemLibrary.execute_console_command(editor_subsystem.get_game_world(), command) # type: ignore
+            world  : unreal.World = editor_subsystem.get_game_world()
+            if world is NULL:
+                world = editor_subsystem.get_editor_world()
+                
+            if world is NULL:
+                unreal.log("not exit world")
+                return
+            unreal.SystemLibrary.execute_console_command(world, command) # type: ignore
             return f"Executed console command: {command} "
         except Exception as e:
             unreal.log_error(f"Failed to execute console command: {str(e)}")

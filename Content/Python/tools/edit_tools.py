@@ -18,9 +18,79 @@ def register_edit_tool( mcp:UnrealMCP):
 
 
     @mcp.game_thread_tool()
-    def test_engine_state(ctx: Context) :
-        """测试连接状态"""
-        return {"running"}
+    def test_engine_state(ctx: Context) -> Dict[str, Any]:
+        """测试连接状态，返回详细的引擎和连接信息
+        
+        Returns:
+            包含以下信息的字典:
+            - status: 连接状态 ("connected" 或 "disconnected")
+            - engine_version: Unreal Engine 版本信息
+            - current_level: 当前关卡名称
+            - actor_count: 当前关卡中的 Actor 数量
+            - python_version: Python 版本信息
+            - mcp_server_status: MCP 服务器状态
+        """
+        try:
+            import sys
+            import platform
+            
+            # 获取当前关卡信息
+            current_level = None
+            actor_count = 0
+            try:
+                world = unreal.EditorLevelLibrary.get_editor_world()
+                if world:
+                    current_level = unreal.EditorLevelLibrary.get_current_level_name()
+                    all_actors = unreal.EditorLevelLibrary.get_all_level_actors()
+                    actor_count = len(all_actors) if all_actors else 0
+            except Exception as e:
+                unreal.log_warning(f"获取关卡信息时出错: {str(e)}")
+            
+            # 获取 MCP 设置
+            mcp_port = None
+            try:
+                setting = unreal.get_default_object(unreal.MCPSetting)
+                if setting:
+                    mcp_port = setting.port
+            except Exception as e:
+                unreal.log_warning(f"获取 MCP 设置时出错: {str(e)}")
+            
+            # 构建状态信息
+            status_info = {
+                "status": "connected",
+                "engine_info": {
+                    "python_available": True,
+                    "editor_world_available": world is not None if 'world' in locals() else False,
+                },
+                "current_level": current_level or "未知",
+                "actor_count": actor_count,
+                "python_info": {
+                    "version": sys.version,
+                    "version_info": {
+                        "major": sys.version_info.major,
+                        "minor": sys.version_info.minor,
+                        "micro": sys.version_info.micro
+                    },
+                    "platform": platform.platform(),
+                    "executable": sys.executable
+                },
+                "mcp_server": {
+                    "port": mcp_port,
+                    "status": "running" if mcp_port else "unknown"
+                },
+            }
+            
+            return status_info
+            
+        except Exception as e:
+            unreal.log_error(f"测试引擎状态时出错: {str(e)}")
+            import traceback
+            unreal.log_error(traceback.format_exc())
+            return {
+                "status": "error",
+                "error": str(e),
+                "error_type": type(e).__name__
+            }
 
 
     @mcp.game_thread_tool()

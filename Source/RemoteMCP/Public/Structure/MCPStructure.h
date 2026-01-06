@@ -46,7 +46,7 @@ public:
 	UPROPERTY(BlueprintReadWrite,Category="MCPLibrary|RemoteMCP")
 	FString GUID;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite,Category="MCPLibrary|RemoteMCP")
 	TObjectPtr<UObject> PythonObjectHandle;
 
 	bool Valid() const
