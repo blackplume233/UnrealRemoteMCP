@@ -1,26 +1,18 @@
 
 import time
 from typing import Dict, List, Optional
+from foundation.log_handler import LogCaptureScope
 from foundation.mcp_app import UnrealMCP
 from mcp.server.fastmcp.server import FastMCP
 import unreal
 from foundation.utility import like_str_parameter
 
-ue_log_capture = unreal.PythonLogCaptureContext()
 
-class LogCaptureScope:
-    def __enter__(self):
-        ue_log_capture.clear()
-        ue_log_capture.begin_capture()
-        return ue_log_capture
-    def __exit__(self, exc_type: Optional[type], exc_value: Optional[BaseException], traceback: Optional[object]) -> bool:
-        ue_log_capture.end()
-        # Do not suppress exceptions
-        return False
 
 def register_common_tools(mcp : UnrealMCP):
-    @mcp.tool()
+    @mcp.game_thread_tool()
     def test_tool():
+        unreal.log(f"Executed tool: test_tool")
         return "Hello from first tool!"
     
 
@@ -90,10 +82,10 @@ def register_common_tools(mcp : UnrealMCP):
             unreal.log(command)
             command = like_str_parameter(command, "command", "")
             unreal.log(command)
-            with LogCaptureScope() as log_capture:
-                editor_subsystem : unreal.UnrealEditorSubsystem  = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
-                unreal.SystemLibrary.execute_console_command(editor_subsystem.get_game_world(), command)
-            return f"Executed console command: {command}/ {log_capture.get_logs()} "
+            
+            editor_subsystem : unreal.UnrealEditorSubsystem  = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
+            unreal.SystemLibrary.execute_console_command(editor_subsystem.get_game_world(), command) # type: ignore
+            return f"Executed console command: {command} "
         except Exception as e:
             unreal.log_error(f"Failed to execute console command: {str(e)}")
             return f"Console command execution failed. {str(e)}"

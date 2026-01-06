@@ -5,14 +5,17 @@ import os
 import traceback
 from typing import Any, Awaitable, Callable, Sequence, Optional
 import uuid
+from foundation.log_handler import LogCaptureScope
 import anyio
 from mcp.types import AnyFunction, EmbeddedResource, ImageContent, TextContent
+import json
 import unreal
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.server import Settings
 import uvicorn
 import socket
 from foundation import global_context
+from foundation import utility
 max_tick_count = 86400
 
 logger = logging.getLogger()
@@ -29,6 +32,7 @@ class UnrealMCP(FastMCP):
         self.uuid = uuid.uuid4()
         self.task_queue = asyncio.Queue()  # 用于存储任务的队列
         self._game_thread_tool_set = set[str]()
+        #self.json_response = True
         #self.tick_loop =  asyncio.SelectorEventLoop()
         
 
@@ -88,6 +92,10 @@ class UnrealMCP(FastMCP):
         if type == unreal.MCPBridgeFuncType.EXIT:
             self.should_exit = True
             self.clear_bridge()
+            self.server.should_exit = True
+            self.server.force_exit = True
+            
+            pass
         if type == unreal.MCPBridgeFuncType.START:
             self.sync_run_func(self.async_run)
             pass
@@ -139,18 +147,24 @@ class UnrealMCP(FastMCP):
         await self.do_task()
         return True
     
+
+    
     async def do_task(self) -> Any:
         # 运行任务
          while not self.task_queue.empty():
             func, args, kwargs,future = await self.task_queue.get()
             try:
-                result = func(*args, **kwargs)
-                if isinstance(result, Awaitable):
-                    result = await result
-                future.set_result(result)
-                unreal.log(f"Executed tool: {func.__name__}, Result: {result}")
+                tool_function = func(*args, **kwargs)
+                with LogCaptureScope() as log_capture:
+                    if isinstance(tool_function, Awaitable):
+                        result = await tool_function
+                    str_log =  f"{(log_capture.get_logs())}" #str(log_capture.get_logs())
+                    result = utility.attach_logs_to_result(result, str_log)
+                   
+                    unreal.log(f"Task executed with result: {func.__name__} {result} {type(result)} {log_capture.get_logs()} {str_log}")
+                    future.set_result(result)
             except Exception as e:
-                error_info = f"Error executing tool {func.__name__}: {str(e)}"
+                error_info = f"Error executing tool {func.__name__}: {str(e)} \n{e.args} \n{traceback.format_exc()}"
                 logger.info(error_info)
                 future.set_result(error_info)
                 return error_info

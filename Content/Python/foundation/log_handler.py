@@ -1,4 +1,6 @@
 import logging
+
+from typing import Optional
 import unreal
 
 class UnrealLogHandler(logging.Handler):
@@ -26,3 +28,23 @@ def setup_logging(name : str | None = None) -> None:
 
     # 添加处理器到 Logger
     logger.addHandler(unreal_handler)
+
+
+ue_log_capture = unreal.PythonLogCaptureContext()
+capture_count = 0
+class LogCaptureScope:
+    def __enter__(self):
+        global capture_count
+        if capture_count == 0:
+            ue_log_capture.clear()
+            ue_log_capture.begin_capture()
+        capture_count += 1
+        return ue_log_capture
+    def __exit__(self, exc_type: Optional[type], exc_value: Optional[BaseException], traceback: Optional[object]) -> bool:
+        global capture_count
+        capture_count -= 1
+        if capture_count == 0:
+            ue_log_capture.end()
+        # Do not suppress exceptions
+        return False
+    

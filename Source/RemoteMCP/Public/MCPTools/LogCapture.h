@@ -15,7 +15,7 @@ class FLogCaptureDevice : public FOutputDevice
 public:
 	virtual void Serialize(const TCHAR* V, ELogVerbosity::Type Verbosity, const FName& Category) override
 	{
-		FString Msg = FString::Printf(TEXT("[%s] %s"), *Category.ToString(), V);
+		FString Msg = FString::Printf(TEXT("[%s] %s \n"), *Category.ToString(), V);
 		for (auto Record : Records)
 		{
 			if (Record.IsValid())
@@ -23,9 +23,27 @@ public:
 		}
 		
 	}
-	
+
+	FLogCaptureDevice()
+	{
+		if (GLog)
+			GLog->AddOutputDevice(this);
+	}
+
+	virtual ~FLogCaptureDevice() override
+	{
+		if (GLog)
+			GLog->RemoveOutputDevice(this);
+	}
+
 	inline static void AddCapture(const TSharedPtr<ILogCapture>& Capture)
 	{
+		if (Device == nullptr)
+		{
+			Device = MakeShared<FLogCaptureDevice>();
+
+		}
+
 		Records.Add(Capture);
 	}
 	inline static void RemoveCapture(const TSharedPtr<ILogCapture>& Capture)
@@ -40,6 +58,7 @@ public:
 private:
 	inline static TSet<TWeakPtr<ILogCapture>> Records;
 	inline static TArray<FPythonLogCaptureDelegate> Delegates;
+	inline static TSharedPtr<FLogCaptureDevice> Device = nullptr;
 };
 
 

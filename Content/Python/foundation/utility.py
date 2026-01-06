@@ -1,6 +1,8 @@
 import json
 from typing import Any, Callable,Optional
 
+from mcp.types import TextContent
+import pydantic_core
 import unreal
 
 
@@ -69,5 +71,27 @@ def like_str_parameter(params:dict | str, name:str, default_value:Any) -> Any:
         return params
     else:
         raise ValueError("Invalid params type. It should be a dictionary or a string.")
+def to_json_value(data : dict | list | str | int | float | bool | None) -> dict:
+    """Convert a Python data structure to a JSON-serializable value."""
+    if data is TextContent :
+        return data.to_dict()
+    return json.loads(json.dumps(data))
 
+
+def attach_logs_to_result(result: Any, logs: list[str]|str) -> Any:
+    """Attach logs to the result in a dictionary."""
+    
+    if isinstance(result, dict):
+        result['logs'] = str(logs)
+        return result
+    if isinstance(result, list):
+       text_content_ = result[0]
+       if isinstance(text_content_, TextContent):
+            text_content_.text = pydantic_core.to_json({
+                    "result": text_content_.text,
+                    "logs": str(logs)
+                }).decode()
+            return [text_content_]
+    return result
+       
 
