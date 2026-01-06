@@ -78,25 +78,25 @@ class  UPythonLogCaptureContext : public UObject
 	GENERATED_BODY()
 	UPythonLogCaptureContext();
 public:
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable,Category="MCPLibrary|Log")
 	const TArray<FString>& GetLogs()
 	{
 		return Capture->Logs;
 	}
 	
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable,Category="MCPLibrary|Log")
 	void Clear()
 	{
 		Capture->Logs.Empty();
 	}
 	
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable,Category="MCPLibrary|Log")
 	void BeginCapture()
 	{
 		FLogCaptureDevice::AddCapture(Capture);
 	}
 	
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable,Category="MCPLibrary|Log")
 	void End()
 	{
 		FLogCaptureDevice::RemoveCapture(Capture);

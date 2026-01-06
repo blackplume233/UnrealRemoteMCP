@@ -47,17 +47,17 @@ public:
 	void PostPythonInit();
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable ,Category="MCPLibrary|RemoteMCP")
 	void StartMCP() ;
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable ,Category="MCPLibrary|RemoteMCP")
 	void StopMCP() ;
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable ,Category="MCPLibrary|RemoteMCP")
 	EMCPServerState GetMCPServeState() const;
 private:
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable,Category="MCPLibrary|RemoteMCP")
 	void SetupObject(FMCPObject Context);
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable,Category="MCPLibrary|RemoteMCP")
 	void ClearObject();
 private:
 	UPROPERTY()

@@ -15,9 +15,9 @@ class REMOTEMCP_API UMCPLibrary : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable,Category="MCPLibrary|RemoteMCP")
 	static void StartMCP();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable ,Category="MCPLibrary|RemoteMCP")
 	static void StopMCP();
 };

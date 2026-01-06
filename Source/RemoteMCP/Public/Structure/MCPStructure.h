@@ -37,13 +37,13 @@ struct FMCPObject
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite,Category="MCPLibrary|RemoteMCP")
 	FMCPBridgeFuncDelegate Bridge;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite,Category="MCPLibrary|RemoteMCP")
 	FMCPObjectEventFunction Tick;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite,Category="MCPLibrary|RemoteMCP")
 	FString GUID;
 
 	UPROPERTY(BlueprintReadWrite)
