@@ -14,7 +14,7 @@
  * 
  */
 UCLASS()
-class REMOTEMCP_API UMCPSubsystem : public UUnrealEditorSubsystem, public FTickableGameObject
+class REMOTEMCP_API UMCPSubsystem : public UEditorSubsystem, public FTickableGameObject
 {
 	GENERATED_BODY()
 public:
@@ -45,10 +45,17 @@ public:
 #pragma endregion
 	void PostEngineInit();
 	void PostPythonInit();
+	void SetupBridge();
+	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
-
+	virtual void PostCDOCompiled(const FPostCDOCompiledContext& Context) override;
+	
+	UFUNCTION(BlueprintCallable ,Category="MCPLibrary|RemoteMCP")
+	static UMCPSubsystem* Get();
 	UFUNCTION(BlueprintCallable ,Category="MCPLibrary|RemoteMCP")
 	void StartMCP() ;
+	UFUNCTION(BlueprintCallable ,Category="MCPLibrary|RemoteMCP")
+	void Reload();
 	UFUNCTION(BlueprintCallable ,Category="MCPLibrary|RemoteMCP")
 	void StopMCP() ;
 
@@ -60,10 +67,10 @@ private:
 	UFUNCTION(BlueprintCallable,Category="MCPLibrary|RemoteMCP")
 	void ClearObject();
 private:
-	UPROPERTY()
-	FMCPObject MCPContext;
+	//UPROPERTY()
+	inline static FMCPObject MCPContext;
 	TFuture<void> RunTread;
 	int TickCount = 0;
-	static constexpr int TickInterval = 10;
+	static constexpr int TickInterval = 2;
 	bool WaitStart = false;
 };

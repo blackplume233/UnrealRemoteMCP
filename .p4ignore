@@ -1,0 +1,21 @@
+# Perforce ignore file
+# Reference: https://www.perforce.com/manuals/p4guide/Content/P4Guide/less_common.files.ignore.html
+
+# --- Python caches ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- IDE / Editor ---
+.idea/
+.vscode/
+.vs/
+.cursor/
+
+# --- Cursor / tooling local artifacts (optional but commonly unwanted) ---
+.cursorignore
+

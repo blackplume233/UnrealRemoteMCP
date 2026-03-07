@@ -16,6 +16,8 @@ class REMOTEMCP_API UMCPSetting : public UDeveloperSettings
 	UMCPSetting();
 public:
 	UPROPERTY(Config, BlueprintReadWrite, EditAnywhere, Category = "MCP")
+	bool bEnable = false;
+	UPROPERTY(Config, BlueprintReadWrite, EditAnywhere, Category = "MCP")
 	int Port = 8422;
 	UPROPERTY(Config, BlueprintReadWrite, EditAnywhere, Category = "MCP")
 	bool bAutoStart = false;

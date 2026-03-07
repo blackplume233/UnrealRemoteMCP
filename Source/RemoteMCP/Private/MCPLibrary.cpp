@@ -10,10 +10,10 @@
 
 void UMCPLibrary::StartMCP()
 {
-	GEditor->GetEditorSubsystem<UMCPSubsystem>()->StartMCP();
+	UMCPSubsystem::Get()->StartMCP();
 }
 
 void UMCPLibrary::StopMCP()
 {
-	GEditor->GetEditorSubsystem<UMCPSubsystem>()->StopMCP();
+	UMCPSubsystem::Get()->StopMCP();
 }

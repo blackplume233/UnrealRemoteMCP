@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from foundation.mcp_app import UnrealMCP
 from mcp.server.fastmcp import Context
 import unreal
@@ -7,93 +7,24 @@ import foundation.utility as unreal_utility
 from foundation.utility import call_cpp_tools
 
 
-# tools reference  https://github.com/chongdashu/unreal-mcp
+
 def register_edit_tool( mcp:UnrealMCP):
     """Register editor tools with the MCP server."""
+    # Domain 描述（用于 get_dispatch 展示）
+    mcp.set_domain_description(
+        "level",
+        "关卡/Actor/视口相关编辑器能力：查询 Actor、生成/删除 Actor、设置 Transform/属性、视口聚焦等。",
+    )
+    mcp.set_domain_description(
+        "blueprint",
+        "蓝图资产与蓝图图编辑：创建/编译蓝图、添加组件、设置组件/蓝图属性、在蓝图图里添加/连接节点等。",
+    )
+    mcp.set_domain_description(
+        "umg",
+        "UMG Widget 蓝图与界面绑定：创建 Widget、添加控件、绑定事件、添加到视口等。",
+    )
 
-    @mcp.tool()
-    def all_unreal_api_path(ctx: Context) : 
-        """get a file path  include all unreal api"""
-        return "D:\\KLWorkspace\\Project\\Project\\Intermediate\\PythonStub\\unreal.py"
-
-
-    @mcp.game_thread_tool()
-    def test_engine_state(ctx: Context) -> Dict[str, Any]:
-        """测试连接状态，返回详细的引擎和连接信息
-        
-        Returns:
-            包含以下信息的字典:
-            - status: 连接状态 ("connected" 或 "disconnected")
-            - engine_version: Unreal Engine 版本信息
-            - current_level: 当前关卡名称
-            - actor_count: 当前关卡中的 Actor 数量
-            - python_version: Python 版本信息
-            - mcp_server_status: MCP 服务器状态
-        """
-        try:
-            import sys
-            import platform
-            
-            # 获取当前关卡信息
-            current_level = None
-            actor_count = 0
-            try:
-                world = unreal.EditorLevelLibrary.get_editor_world()
-                if world:
-                    current_level = unreal.EditorLevelLibrary.get_current_level_name()
-                    all_actors = unreal.EditorLevelLibrary.get_all_level_actors()
-                    actor_count = len(all_actors) if all_actors else 0
-            except Exception as e:
-                unreal.log_warning(f"获取关卡信息时出错: {str(e)}")
-            
-            # 获取 MCP 设置
-            mcp_port = None
-            try:
-                setting = unreal.get_default_object(unreal.MCPSetting)
-                if setting:
-                    mcp_port = setting.port
-            except Exception as e:
-                unreal.log_warning(f"获取 MCP 设置时出错: {str(e)}")
-            
-            # 构建状态信息
-            status_info = {
-                "status": "connected",
-                "engine_info": {
-                    "python_available": True,
-                    "editor_world_available": world is not None if 'world' in locals() else False,
-                },
-                "current_level": current_level or "未知",
-                "actor_count": actor_count,
-                "python_info": {
-                    "version": sys.version,
-                    "version_info": {
-                        "major": sys.version_info.major,
-                        "minor": sys.version_info.minor,
-                        "micro": sys.version_info.micro
-                    },
-                    "platform": platform.platform(),
-                    "executable": sys.executable
-                },
-                "mcp_server": {
-                    "port": mcp_port,
-                    "status": "running" if mcp_port else "unknown"
-                },
-            }
-            
-            return status_info
-            
-        except Exception as e:
-            unreal.log_error(f"测试引擎状态时出错: {str(e)}")
-            import traceback
-            unreal.log_error(traceback.format_exc())
-            return {
-                "status": "error",
-                "error": str(e),
-                "error_type": type(e).__name__
-            }
-
-
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("level")
     def get_actors_in_level(ctx: Context) -> List[Dict[str, Any]]:
         """Get a list of all actors in the current level."""
         try:
@@ -130,9 +61,9 @@ def register_edit_tool( mcp:UnrealMCP):
             
         except Exception as e:
             unreal.log_error(f"Error getting actors in level: {e}")
-            return {"error": str(e), "actors": []}
+            return []
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("level")
     def get_actors_detail_info(ctx: Context, actor_name : str) -> Dict:
         """Get detailed information of the specified actor by name, including its basic properties and all component properties."""
         try:
@@ -149,7 +80,7 @@ def register_edit_tool( mcp:UnrealMCP):
             actor = matched_actors
             if not actor or len(actor) == 0:
                 return {"error": "Actor not found", "actor": actor_name}
-            unreal.log("XXXXX")
+
             actor = actor[0]
             # INSERT_YOUR_CODE
             # 实现逐组件逐属性的Json化
@@ -175,6 +106,48 @@ def register_edit_tool( mcp:UnrealMCP):
                 "components": []
             }
 
+            def _to_jsonable(v, depth: int = 0, seen: set[int] | None = None):
+                """将 UE/Python 任意值转换为 JSON-safe（避免 Pydantic 序列化 unknown type，如 SleepFamily）。"""
+                if seen is None:
+                    seen = set()
+                # 防止递归爆炸/循环引用
+                if depth >= 6:
+                    return str(v)
+                try:
+                    obj_id = id(v)
+                    if obj_id in seen:
+                        return "<circular_ref>"
+                    seen.add(obj_id)
+                except Exception:
+                    pass
+
+                if v is None or isinstance(v, (str, int, float, bool)):
+                    return v
+
+                # 容器递归处理（list/dict 内部也要转，避免 list[SleepFamily] 这种情况）
+                if isinstance(v, (list, tuple, set)):
+                    return [_to_jsonable(x, depth + 1, seen) for x in v]
+                if isinstance(v, dict):
+                    return {str(k): _to_jsonable(val, depth + 1, seen) for k, val in v.items()}
+
+                # UE 常见结构/对象兜底
+                if hasattr(v, "to_tuple"):
+                    try:
+                        return _to_jsonable(list(v.to_tuple()), depth + 1, seen)
+                    except Exception:
+                        pass
+                if hasattr(v, "get_name"):
+                    try:
+                        return v.get_name()
+                    except Exception:
+                        pass
+
+                # 最终兜底：转字符串
+                try:
+                    return str(v)
+                except Exception as e:
+                    return f"<unserializable:{type(v)}:{e}>"
+
             # 获取所有组件
             components = actor.get_components_by_class(unreal.ActorComponent)
             for comp in components:
@@ -183,27 +156,35 @@ def register_edit_tool( mcp:UnrealMCP):
                     "class": comp.get_class().get_name(),
                     "properties": {}
                 }
-                # 获取所有属性
-                # 只获取public属性
-                try:
-                    # 获取属性名列表
-                    prop_names = [desc.get_name() for desc in comp.get_class().get_properties()]
-                    for prop_name in prop_names:
-                        try:
-                            value = getattr(comp, prop_name)
-                            # 尝试序列化为基本类型
-                            if isinstance(value, (int, float, str, bool, list, dict, type(None))):
-                                comp_info["properties"][prop_name] = value
-                            elif hasattr(value, "to_tuple"):
-                                comp_info["properties"][prop_name] = value.to_tuple()
-                            elif hasattr(value, "get_name"):
-                                comp_info["properties"][prop_name] = value.get_name()
-                            else:
-                                comp_info["properties"][prop_name] = str(value)
-                        except Exception as e:
-                            comp_info["properties"][prop_name] = f"<无法获取: {e}>"
-                except Exception as e:
-                    comp_info["properties"] = f"<无法获取属性: {e}>"
+
+                # 尝试枚举属性：UE Python 没有稳定的“列出所有 UPROPERTY”API，这里用启发式方式
+                # - 遍历 dir(comp)，优先用 get_editor_property 读取
+                # - 限制最多读取一定数量，避免输出过大/耗时
+                max_props = 64
+                prop_count = 0
+                for attr in dir(comp):
+                    if prop_count >= max_props:
+                        comp_info["properties_truncated"] = True
+                        break
+                    if attr.startswith("_"):
+                        continue
+                    if attr in ("get_editor_property", "set_editor_property", "reset_editor_property", "is_editor_property_overridden"):
+                        continue
+                    # 只处理看起来像字段的名字（跳过明显的方法名）
+                    if attr.startswith("get_") or attr.startswith("set_") or attr.startswith("is_") or attr.startswith("has_"):
+                        continue
+                    try:
+                        value = comp.get_editor_property(attr)
+                    except Exception:
+                        # 不可作为 editor_property 的项直接跳过
+                        continue
+                    try:
+                        comp_info["properties"][attr] = _to_jsonable(value)
+                        prop_count += 1
+                    except Exception as e:
+                        comp_info["properties"][attr] = f"<无法序列化: {e}>"
+                        prop_count += 1
+
                 actor_info["components"].append(comp_info)
 
             return actor_info
@@ -214,7 +195,7 @@ def register_edit_tool( mcp:UnrealMCP):
 
 
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("level")
     def spawn_actor(
         ctx: Context,
         name: str,
@@ -236,13 +217,15 @@ def register_edit_tool( mcp:UnrealMCP):
         """
         params = {
                     "name": name,
-                    "type": type.upper(),  # Make sure type is uppercase
+                    # type 保持原样（PointLight/StaticMeshActor 等），避免 C++ 侧查找失败
+                    "type": type,
                     "location": location,
                     "rotation": rotation
         }
-        return unreal_utility.to_py_json(unreal.MCPEditorTools.handle_spawn_actor(params))
+        json_params = unreal_utility.to_unreal_json(params)
+        return unreal_utility.to_py_json(unreal.MCPEditorTools.handle_spawn_actor(json_params))
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("level")
     def delete_actor(ctx: Context, name: str) -> Dict[str, Any]:
         """Delete an actor by name."""
         params = {
@@ -251,43 +234,62 @@ def register_edit_tool( mcp:UnrealMCP):
         json_params = unreal_utility.to_unreal_json(params)
         return unreal_utility.to_py_json(unreal.MCPEditorTools.handle_delete_actor(json_params))
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("level")
     def set_actor_transform(
         ctx: Context,
         name: str,
-        location: List[float]  = None,
-        rotation: List[float]  = None,
-        scale: List[float] = None
+        location: Optional[List[float]] = None,
+        rotation: Optional[List[float]] = None,
+        scale: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """Set the transform of an actor by name."""
-        params = {
-            "name": name,
-            "location": location,
-            "rotation": rotation,
-            "scale": scale
-        }
+        # 不传入的字段不要序列化为 null（C++ 侧可能把 null 当 0 处理，导致 scale 变成 (0,0,0)）
+        params: Dict[str, Any] = {"name": name}
+        if location is not None:
+            params["location"] = location
+        if rotation is not None:
+            params["rotation"] = rotation
+        if scale is not None:
+            params["scale"] = scale
         json_params = unreal_utility.to_unreal_json(params)
         return unreal_utility.to_py_json(unreal.MCPEditorTools.handle_set_actor_transform(json_params))
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("level")
     def get_actor_transform(ctx: Context, path_to_actor: str) -> Dict[str, Any]:
         """Get the transform of an actor by path."""
         actor = unreal.EditorLevelLibrary.get_actor_reference(path_to_actor)
         if actor is None:
-            return {"error": "Actor not found"}
+            # 兼容：用 path/name 在当前关卡里兜底查找
+            try:
+                for ac in unreal.EditorLevelLibrary.get_all_level_actors():
+                    if not ac:
+                        continue
+                    if ac.get_path_name() == path_to_actor or ac.get_name() == path_to_actor:
+                        actor = ac
+                        break
+            except Exception:
+                actor = None
+        if actor is None:
+            return {"error": "Actor not found", "query": path_to_actor}
         location = actor.get_actor_location()
         rotation = actor.get_actor_rotation()
         scale = actor.get_actor_scale3d()
-        return {"location": location, "rotation": rotation, "scale": scale}
+        return {
+            "name": actor.get_name(),
+            "path": actor.get_path_name(),
+            "location": [location.x, location.y, location.z],
+            "rotation": [rotation.pitch, rotation.yaw, rotation.roll],
+            "scale": [scale.x, scale.y, scale.z],
+        }
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("level")
     def get_actor_properties(ctx: Context, name: str) -> Dict[str, Any]:
         """Get all properties of an actor."""
         params = {
             "name": name,
         }
         return call_cpp_tools(unreal.MCPEditorTools.handle_get_actor_properties, params)
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("level")
     def set_actor_property(
         ctx: Context,
         name: str,
@@ -311,13 +313,13 @@ def register_edit_tool( mcp:UnrealMCP):
             "property_value": property_value,
         }
         return call_cpp_tools(unreal.MCPEditorTools.handle_set_actor_property, params)
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("level")
     def focus_viewport(
         ctx: Context,
-        target: str = None,
-        location: List[float] = None,
+        target: Optional[str] = None,
+        location: Optional[List[float]] = None,
         distance: float = 1000.0,
-        orientation: List[float] = None
+        orientation: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
         Focus the viewport on a specific actor or location.
@@ -338,7 +340,7 @@ def register_edit_tool( mcp:UnrealMCP):
             "orientation": orientation
         }   
         return call_cpp_tools(unreal.MCPEditorTools.handle_focus_viewport, params)
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("level")
     def spawn_blueprint_actor(
         ctx: Context,
         blueprint_name: str,
@@ -368,7 +370,7 @@ def register_edit_tool( mcp:UnrealMCP):
     
     
     #region blueprint
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def create_blueprint(
         ctx: Context,
         name: str,
@@ -382,7 +384,7 @@ def register_edit_tool( mcp:UnrealMCP):
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_create_blueprint, params)
     
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def add_component_to_blueprint(
         ctx: Context,
         blueprint_name: str,
@@ -420,7 +422,7 @@ def register_edit_tool( mcp:UnrealMCP):
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_add_component_to_blueprint, params)
     
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def set_static_mesh_properties(
         ctx: Context,
         blueprint_name: str,
@@ -444,7 +446,7 @@ def register_edit_tool( mcp:UnrealMCP):
             "static_mesh": static_mesh
         }
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_set_static_mesh_properties, params)
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def set_component_property(
         ctx: Context,
         blueprint_name: str,
@@ -460,7 +462,7 @@ def register_edit_tool( mcp:UnrealMCP):
             "property_value": property_value
         }       
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_set_component_property, params)
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def set_physics_properties(
         ctx: Context,
         blueprint_name: str,
@@ -483,7 +485,7 @@ def register_edit_tool( mcp:UnrealMCP):
         }
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_set_physics_properties, params)
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def compile_blueprint(
         ctx: Context,
         blueprint_name: str
@@ -494,7 +496,7 @@ def register_edit_tool( mcp:UnrealMCP):
         }
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_compile_blueprint, params)
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def set_blueprint_property(
         ctx: Context,
         blueprint_name: str,
@@ -520,15 +522,15 @@ def register_edit_tool( mcp:UnrealMCP):
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_set_blueprint_property, params)   
     
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def set_pawn_properties(
         ctx: Context,
         blueprint_name: str,
         auto_possess_player: str = "",
-        use_controller_rotation_yaw: bool = None,
-        use_controller_rotation_pitch: bool = None,
-        use_controller_rotation_roll: bool = None,
-        can_be_damaged: bool = None
+        use_controller_rotation_yaw: Optional[bool] = None,
+        use_controller_rotation_pitch: Optional[bool] = None,
+        use_controller_rotation_roll: Optional[bool] = None,
+        can_be_damaged: Optional[bool] = None
     ) -> Dict[str, Any]:
         """
         Set common Pawn properties on a Blueprint.
@@ -557,7 +559,7 @@ def register_edit_tool( mcp:UnrealMCP):
     #endregion
     
     #region node tools
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def add_blueprint_event_node(
         ctx: Context,
         blueprint_name: str,
@@ -585,7 +587,7 @@ def register_edit_tool( mcp:UnrealMCP):
         }
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_add_blueprint_event, params)
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def add_blueprint_input_action_node(
         ctx: Context,
         blueprint_name: str,
@@ -610,7 +612,7 @@ def register_edit_tool( mcp:UnrealMCP):
         }
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_add_blueprint_input_action_node, params)
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def add_blueprint_function_node(
         ctx: Context,
         blueprint_name: str,
@@ -642,7 +644,7 @@ def register_edit_tool( mcp:UnrealMCP):
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_add_blueprint_function_call, params)
     
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def connect_blueprint_nodes(
         ctx: Context,
         blueprint_name: str,
@@ -673,7 +675,7 @@ def register_edit_tool( mcp:UnrealMCP):
         }   
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_connect_blueprint_nodes, params)
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def add_blueprint_variable(
         ctx: Context,
         blueprint_name: str,
@@ -701,7 +703,7 @@ def register_edit_tool( mcp:UnrealMCP):
         } 
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_add_blueprint_variable, params)
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def add_blueprint_get_self_component_reference(
         ctx: Context,
         blueprint_name: str,
@@ -728,7 +730,7 @@ def register_edit_tool( mcp:UnrealMCP):
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_add_blueprint_get_self_component_reference, params)
 
 
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def add_blueprint_self_reference(
         ctx: Context,
         blueprint_name: str,
@@ -749,7 +751,7 @@ def register_edit_tool( mcp:UnrealMCP):
             "node_position": node_position
         }
         return call_cpp_tools(unreal.MCPBlueprintTools.handle_add_blueprint_self_reference, params)
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("blueprint")
     def find_blueprint_nodes(
         ctx: Context,
         blueprint_name: str,
@@ -776,7 +778,7 @@ def register_edit_tool( mcp:UnrealMCP):
     #endregion
     
     #region umg tools
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("umg")
     def create_umg_widget_blueprint(
         ctx: Context,
         widget_name: str,
@@ -800,7 +802,7 @@ def register_edit_tool( mcp:UnrealMCP):
             "path": path
         }
         return call_cpp_tools(unreal.MCPUMGTools.handle_create_umg_widget_blueprint, params)
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("umg")
     def add_text_block_to_widget(
         ctx: Context,
         widget_name: str,
@@ -836,7 +838,7 @@ def register_edit_tool( mcp:UnrealMCP):
             "color": color
         }
         return call_cpp_tools(unreal.MCPUMGTools.handle_add_text_block_to_widget, params)
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("umg")
     def add_button_to_widget(
         ctx: Context,
         widget_name: str,
@@ -876,7 +878,7 @@ def register_edit_tool( mcp:UnrealMCP):
         }
         return call_cpp_tools(unreal.MCPUMGTools.handle_add_button_to_widget, params)   
     
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("umg")
     def bind_widget_event(
         ctx: Context,
         widget_name: str,
@@ -903,7 +905,7 @@ def register_edit_tool( mcp:UnrealMCP):
             "function_name": function_name
         }   
         return call_cpp_tools(unreal.MCPUMGTools.handle_bind_widget_event, params)
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("umg")
     def add_widget_to_viewport(
         ctx: Context,
         widget_name: str,
@@ -924,7 +926,7 @@ def register_edit_tool( mcp:UnrealMCP):
             "z_order": z_order
         }
         return call_cpp_tools(unreal.MCPUMGTools.handle_add_widget_to_viewport, params)
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("umg")
     def set_text_block_binding(
         ctx: Context,
         widget_name: str,

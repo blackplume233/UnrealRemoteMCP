@@ -6,10 +6,11 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
 
-[[index]]
-url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
-default = true
-
-[[tool.uv.index]]
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-default = true
+# To use a custom PyPI mirror, uncomment and set the URL below:
+# [[index]]
+# url = "https://pypi.org/simple"
+# default = true
+#
+# [[tool.uv.index]]
+# url = "https://pypi.org/simple"
+# default = true

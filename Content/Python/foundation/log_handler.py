@@ -1,6 +1,8 @@
 import logging
 
+import this
 from typing import Optional
+import uuid
 import unreal
 
 class UnrealLogHandler(logging.Handler):
@@ -31,20 +33,38 @@ def setup_logging(name : str | None = None) -> None:
 
 
 ue_log_capture = unreal.PythonLogCaptureContext()
-capture_count = 0
 class LogCaptureScope:
     def __enter__(self):
         global capture_count
-        if capture_count == 0:
-            ue_log_capture.clear()
-            ue_log_capture.begin_capture()
-        capture_count += 1
-        return ue_log_capture
+        global ue_log_capture
+
+        self.name = str(uuid.uuid4())
+        ue_log_capture.begin_capture(self.name)
+        
+        return self
+    
     def __exit__(self, exc_type: Optional[type], exc_value: Optional[BaseException], traceback: Optional[object]) -> bool:
         global capture_count
-        capture_count -= 1
-        if capture_count == 0:
-            ue_log_capture.end()
+        global ue_log_capture
+
+        ue_log_capture.end(self.name)
         # Do not suppress exceptions
         return False
+
+    def __del__(self):
+        global capture_count
+        ue_log_capture.delete(self.name)
+
+    def delete(self):
+        global ue_log_capture
+        ue_log_capture.delete(self.name)
+
+
+
+    def get_logs(self) -> unreal.Array[str]:
+        return ue_log_capture.get_logs(self.name)
+
+    def get_logs_string(self) -> str:
+        return f"{self.get_logs()}"
+    
     

@@ -15,6 +15,8 @@ class FLogCaptureDevice : public FOutputDevice
 public:
 	virtual void Serialize(const TCHAR* V, ELogVerbosity::Type Verbosity, const FName& Category) override
 	{
+		if (Records.Num() <= 0 )
+			return;
 		FString Msg = FString::Printf(TEXT("[%s] %s \n"), *Category.ToString(), V);
 		for (auto Record : Records)
 		{
@@ -41,9 +43,7 @@ public:
 		if (Device == nullptr)
 		{
 			Device = MakeShared<FLogCaptureDevice>();
-
 		}
-
 		Records.Add(Capture);
 	}
 	inline static void RemoveCapture(const TSharedPtr<ILogCapture>& Capture)
@@ -79,28 +79,62 @@ class  UPythonLogCaptureContext : public UObject
 	UPythonLogCaptureContext();
 public:
 	UFUNCTION(BlueprintCallable,Category="MCPLibrary|Log")
-	const TArray<FString>& GetLogs()
+	const TArray<FString>& GetLogs(const FString& Name)
 	{
-		return Capture->Logs;
+		auto Capture = FindOrCreateLogCapture( Name);
+		if (Capture.IsValid())
+		{
+			GLog->FlushThreadedLogs();
+			return Capture->Logs;
+		}
+
+		return Empty;
 	}
 	
 	UFUNCTION(BlueprintCallable,Category="MCPLibrary|Log")
-	void Clear()
+	void Clear(const FString& Name)
 	{
+		auto Capture = FindOrCreateLogCapture( Name);
 		Capture->Logs.Empty();
 	}
 	
 	UFUNCTION(BlueprintCallable,Category="MCPLibrary|Log")
-	void BeginCapture()
+	void BeginCapture(const FString& Name)
 	{
+		auto Capture = FindOrCreateLogCapture( Name);
 		FLogCaptureDevice::AddCapture(Capture);
 	}
 	
 	UFUNCTION(BlueprintCallable,Category="MCPLibrary|Log")
-	void End()
+	void End(const FString& Name)
 	{
+		auto Capture = FindOrCreateLogCapture( Name);
 		FLogCaptureDevice::RemoveCapture(Capture);
 	}
+
+	UFUNCTION(BlueprintCallable,Category="MCPLibrary|Log")
+	void Delete(const FString& Name)
+	{
+		auto Capture = FindOrCreateLogCapture( Name);
+		FLogCaptureDevice::RemoveCapture(Capture);
+		NamedCapture.Remove(Name);
+	}
+
+	TSharedPtr<FPythonLogCapture> FindOrCreateLogCapture(const FString& Name)
+	{
+		if (NamedCapture.Contains(Name))
+		{
+			return NamedCapture[Name];
+		}
+		else
+		{
+			auto NewCapture = MakeShared<FPythonLogCapture>();
+			NamedCapture.Add(Name, NewCapture);
+			return NewCapture;
+		}
+	}
 protected:
-	TSharedPtr<FPythonLogCapture> Capture;
+	TMap<FString, TSharedPtr<FPythonLogCapture> > NamedCapture;
+	//TSharedPtr<FPythonLogCapture> Capture;
+	inline static TArray<FString> Empty;
 };

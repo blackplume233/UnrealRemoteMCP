@@ -30,7 +30,7 @@ namespace MCPCommand
 		{
 			if (GEditor)
 			{
-				if (UMCPSubsystem* EditorUtilitySubsystem = GEditor->GetEditorSubsystem<UMCPSubsystem>())
+				if (UMCPSubsystem* EditorUtilitySubsystem = UMCPSubsystem::Get())
 				{
 					EditorUtilitySubsystem->StartMCP();
 				}
@@ -46,7 +46,7 @@ namespace MCPCommand
 		{
 			if (GEditor)
 			{
-				if (UMCPSubsystem* McpSubsystem = GEditor->GetEditorSubsystem<UMCPSubsystem>())
+				if (UMCPSubsystem* McpSubsystem =UMCPSubsystem::Get())
 				{
 					McpSubsystem->StopMCP();
 				}
@@ -61,7 +61,7 @@ namespace MCPCommand
 		{
 			if (GEditor)
 			{
-				if (UMCPSubsystem* McpSubsystem = GEditor->GetEditorSubsystem<UMCPSubsystem>())
+				if (UMCPSubsystem* McpSubsystem = UMCPSubsystem::Get())
 				{
 					McpSubsystem->StopMCP();
 					McpSubsystem->StartMCP();
@@ -77,7 +77,7 @@ namespace MCPCommand
 		{
 			if (GEditor)
 			{
-				if (UMCPSubsystem* McpSubsystem = GEditor->GetEditorSubsystem<UMCPSubsystem>())
+				if (UMCPSubsystem* McpSubsystem = UMCPSubsystem::Get())
 				{
 					auto State = McpSubsystem->GetMCPServeState();
 					switch (State)
@@ -96,6 +96,20 @@ namespace MCPCommand
 		})
 	};
 
+	static FAutoConsoleCommand MCPReloadCommand{
+		TEXT("MCP.Reload"),
+		TEXT("RemoteMCP Reload"),
+		FConsoleCommandDelegate::CreateLambda([]()
+		{
+			if (GEditor)
+			{
+				if (UMCPSubsystem* McpSubsystem =UMCPSubsystem::Get())
+				{
+					McpSubsystem->Reload();
+				}
+			}
+		})};
+	
 	static FAutoConsoleCommand MCPDebugPanel{
 		TEXT("MCP.DebugPanel"),
 		TEXT("open debug panel whitch only for developer(and is in beta)"),
@@ -109,6 +123,7 @@ namespace MCPCommand
 void FRemoteMCPModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
+	// LiveCoding verification: touch file to ensure a compile is required (safe no-op change).
 	
 	FRemoteMCPStyle::Initialize();
 	FRemoteMCPStyle::ReloadTextures();

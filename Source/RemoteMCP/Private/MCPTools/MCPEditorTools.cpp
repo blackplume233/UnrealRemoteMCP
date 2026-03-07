@@ -24,6 +24,13 @@
 #include "Subsystems/EditorActorSubsystem.h"
 #include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
+#include "BehaviorTree/BehaviorTree.h"
+#include "BehaviorTreeGraph.h"
+#include "BehaviorTreeGraphNode.h"
+#include "BehaviorTreeFactory.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "EditorAssetLibrary.h"
+#include "JsonObjectConverter.h"
 
 
 /**
@@ -593,4 +600,13 @@ FJsonObjectParameter UMCPEditorTools::HandleTakeScreenshot(const FJsonObjectPara
     }
 
     return FUnrealMCPCommonUtils::CreateErrorResponse(TEXT("Failed to take screenshot"));
-} 
+}
+
+FJsonObjectParameter UMCPEditorTools::ConvertObjectToJson(UObject* TargetObject)
+{
+	TSharedPtr<FJsonObject> ResultObj = MakeShared<FJsonObject>();
+	FJsonObjectConverter::UStructToJsonObject(TargetObject->GetClass(),TargetObject,ResultObj.ToSharedRef());
+	return {ResultObj};
+}
+
+

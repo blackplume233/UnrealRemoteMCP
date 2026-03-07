@@ -84,7 +84,7 @@ def attach_logs_to_result(result: Any, logs: list[str]|str) -> Any:
     if isinstance(result, dict):
         result['logs'] = str(logs)
         return result
-    if isinstance(result, list):
+    if isinstance(result, list) and len(result) > 0:
        text_content_ = result[0]
        if isinstance(text_content_, TextContent):
             text_content_.text = pydantic_core.to_json({

@@ -56,12 +56,12 @@ FString UMCPPythonBridge::SafeCallCPPFunction(FMCPCommandDelegate Callable, cons
 		FJsonObjectParameter Result = Callable.Execute(JsonObjectParameter);
 		return Result.ConvertToString();
 	}
-	catch (std::exception e)
+	catch (...)
 	{
-		auto JsonObject = MakeShared<FJsonObject>();
-		auto Error = FString::Printf(TEXT("Error: %s"), *FString(e.what()));
-		JsonObject->SetStringField(TEXT("error"), Error);
-		return UMCPUtility::ConvertJsonObjectToString(JsonObject);
+		// auto JsonObject = MakeShared<FJsonObject>();
+		// auto Error = FString::Printf(TEXT("Error: %s"), *FString(e.what()));
+		// JsonObject->SetStringField(TEXT("error"), Error);
+		return FString(TEXT("Exception with unknown"));
 	}
 }
 

@@ -45,6 +45,7 @@ public class RemoteMCP : ModuleRules
 				"SlateCore", "Blutility","UMG","UMGEditor", "PythonScriptPlugin","Json","JsonUtilities"
 				// ... add private dependencies that you statically link with here ...	
 				,"DeveloperSettings", "EditorScriptingUtilities",
+				"AIModule", "BehaviorTreeEditor", "AIGraph"
 			}
 			);
 		PrivateDependencyModuleNames.AddRange(

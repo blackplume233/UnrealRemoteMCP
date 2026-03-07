@@ -13,7 +13,8 @@ enum EMCPBridgeFuncType
 	Other,
 	Exit,
 	Start,
-	//HeartbeatPacket,
+	Reload,
+	HeartbeatPacket,
 };
 
 
@@ -29,7 +30,7 @@ enum EMCPServerState
 
 DECLARE_DYNAMIC_DELEGATE_RetVal_TwoParams(bool, FMCPBridgeFuncDelegate,  EMCPBridgeFuncType, Type, const FString&, Message);
 DECLARE_DYNAMIC_DELEGATE_OneParam(FMCPBridgeCallback,  const FString&, Message);
-DECLARE_DYNAMIC_DELEGATE(FMCPObjectEventFunction);
+DECLARE_DYNAMIC_DELEGATE_RetVal(bool,FMCPObjectEventFunction);
 DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(FJsonObjectParameter,FMCPCommandDelegate, FJsonObjectParameter, Parameter);
 
 USTRUCT(BlueprintType)
@@ -37,6 +38,11 @@ struct FMCPObject
 {
 	GENERATED_BODY()
 public:
+	FMCPObject() 
+	{
+		//UE_LOG(LogTemp,Error,TEXT("Build Object"))
+	}
+	
 	UPROPERTY(BlueprintReadWrite,Category="MCPLibrary|RemoteMCP")
 	FMCPBridgeFuncDelegate Bridge;
 
@@ -51,6 +57,11 @@ public:
 
 	bool Valid() const
 	{
-		return PythonObjectHandle.Get() != nullptr;
+		return Bridge.IsBound() ;
+	}
+	
+	bool IsRunning() const
+	{
+		return Bridge.IsBound() && Bridge.Execute(EMCPBridgeFuncType::HeartbeatPacket,TEXT("CheckRuning"));
 	}
 };
