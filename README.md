@@ -104,7 +104,7 @@
 1. 先回到 Unreal 执行一次 `MCP.Restart`
 2. 在 Cursor 打开 `Settings -> Tools & MCP`（或设置里搜索 “MCP”）
 3. 找到 `unreal_mcp` 并连接/启用
-4. 连接成功后你应该能看到工具列表（例如 `test_engine_state`、`run_python_script`）
+4. 连接成功后你应该能看到工具列表（例如 `get_unreal_state`、`run_python_script`）
 
 ### 4）用其他 MCP Client 连接（Cherry Studio / Inspector 等）
 
@@ -115,7 +115,7 @@
 
 连接成功后，建议立刻调用：
 
-- **`test_engine_state`**：确认引擎在跑、端口配置正确、当前关卡/Actor 数量可读
+- **`get_unreal_state`**：确认引擎在跑、端口配置正确、当前关卡/Actor 数量可读
 - **`run_python_script`**：跑一段最小脚本（建议把输出写到 `result` 变量）
 
 `run_python_script` 示例：

@@ -13,37 +13,6 @@ from foundation.utility import like_str_parameter
 
 def register_common_tools(mcp : UnrealMCP):
     @mcp.game_thread_tool()
-    def test_tool():
-        with LogCaptureScope() as log_capture:
-            unreal.log_error(f"Executed tool: test_tool")
-        return "Hello from first tool!" + f"{log_capture.get_logs()}"
-
-    @mcp.game_thread_tool()
-    async def test_tool_async(steps: int = 10, wait_frames: int = 1):
-        """
-        用于验证：game_thread 的 async tool 是否能“逐帧”推进。
-
-        - steps: 打印次数
-        - wait_frames: 每次打印后等待的帧数（>=1 推荐）
-        """
-        with LogCaptureScope() as log_capture:
-            steps = int(steps) if steps is not None else 10
-            wait_frames = int(wait_frames) if wait_frames is not None else 1
-            if steps <= 0:
-                return {"result": "skipped", "reason": "steps<=0"}
-            if wait_frames <= 0:
-                wait_frames = 1
-
-            unreal.log(f"test_tool_async start: steps={steps}, wait_frames={wait_frames}")
-            for i in range(steps):
-                unreal.log(f"test_tool_async step {i+1}/{steps} (tick={getattr(mcp, 'tick_count', None)})")
-                for _ in range(wait_frames):
-                    await mcp.next_frame()
-            unreal.log("test_tool_async end")
-            return {"result": "ok", "steps": steps, "wait_frames": wait_frames, "logs": f"{log_capture.get_logs_string()}"}
-
-
-    @mcp.game_thread_tool()
     def run_python_script(script: str):
         """Run a Python script in the Unreal Engine editor，the result must is str.
         Args:
@@ -91,8 +60,8 @@ def register_common_tools(mcp : UnrealMCP):
         """
         try:
             # 说明：
-            # - unreal.PythonLogCaptureContext 是“全局捕获”，一旦 begin_capture，UE Output Log 往往不会实时显示。
-            # - 对于长时间 await（逐帧 next_frame）场景，长期占用捕获会让用户感觉“主线程卡住/没日志/SlowTask 不关”。
+            # - unreal.PythonLogCaptureContext 是"全局捕获"，一旦 begin_capture，UE Output Log 往往不会实时显示。
+            # - 对于长时间 await（逐帧 next_frame）场景，长期占用捕获会让用户感觉"主线程卡住/没日志/SlowTask 不关"。
             # 因此：只在 exec 阶段捕获；await 阶段默认不捕获（可用参数回退旧行为）。
 
             logs_pre = ""
@@ -192,104 +161,46 @@ def register_common_tools(mcp : UnrealMCP):
             )
         
         pass
-    
+
     @mcp.game_thread_tool()
-    def get_unreal_api( ) : 
-        """get a file path  include all unreal api"""
-        try:
-            # 获取项目根目录
-            project_dir = unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir())
-            # 组合 unrealpy 路径
-            # type: ignore[arg-type] — UE Python stub 声明 Paths.combine 参数为 Array[str]，实际接受 list[str]
-            unreal_py_api_path = unreal.Paths.combine([project_dir, "Intermediate", "PythonStub", "unreal.py"])  # type: ignore[arg-type]
-            # 检查目录是否存在
-            
-            if unreal.Paths.file_exists(unreal_py_api_path):
-                return unreal_py_api_path
-            else:
-                return f"unrealpy 目录不存在: {unreal_py_api_path}"
-        except Exception as e:
-            return f"获取 unrealpy 目录时出错: {str(e)}"
-    
-    @mcp.game_thread_tool()
-    def get_project_dir() -> str:
-        """
-        获取Unreal项目的根目录路径
+    def get_unreal_state() -> Dict[str, Any]:
+        """获取 Unreal Engine 环境与连接状态的综合信息。
+
+        一次调用返回项目路径、源码目录、引擎目录、日志目录、API stub 路径、
+        当前关卡、Actor 数量、Python 运行时信息、MCP 服务端口等。
 
         Returns:
-            str: 项目根目录的完整路径
-        """
-        try:
-            return unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir())
-        except Exception as e:
-            return f"获取项目目录失败: {str(e)}"
-
-    @mcp.game_thread_tool()
-    def get_source_dir() -> str:
-        """
-        获取Unreal项目源码目录路径
-
-        Returns:
-            str: 源码目录的完整路径
-        """
-        try:
-            # 获取项目源码目录（通常为 Source 目录）
-            source_dir = unreal.Paths.convert_relative_path_to_full(unreal.Paths.game_source_dir())
-            script_dir = unreal.Paths.combine([source_dir,"..","Script"])  # type: ignore[arg-type]
-            return str([source_dir, script_dir])
-        except Exception as e:
-            return f"获取源码目录失败: {str(e)}"
-
-    @mcp.game_thread_tool()
-    def get_engine_dir() -> str:
-        """
-        获取Unreal Engine目录路径
-        """
-        try:
-            return unreal.Paths.convert_relative_path_to_full(unreal.Paths.engine_dir())
-        except Exception as e:
-            return f"获取Engine目录失败: {str(e)}"
-    
-    @mcp.game_thread_tool()
-    def get_log_dir()->str:
-        """获取当前引擎log输出的目录，其中<项目名称>.log是当前的log文件"""
-        try:
-            # 获取项目根目录
-            project_dir = unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir())
-            # 组合 unrealpy 路径
-            unreal_py_api_path = unreal.Paths.combine([project_dir, "Saved", "Logs"])  # type: ignore[arg-type]
-            # 检查目录是否存在
-            
-            return unreal_py_api_path
-        except Exception as e:
-            return f"获取 unrealpy 目录时出错: {str(e)}"
-
-
-    @mcp.game_thread_tool()
-    def test_engine_state() -> Dict[str, Any]:
-        """测试连接状态，返回详细的引擎和连接信息
-        
-        Returns:
-            包含以下信息的字典:
-            - status: 连接状态 ("connected" 或 "disconnected")
-            - engine_version: Unreal Engine 版本信息
-            - current_level: 当前关卡名称
-            - actor_count: 当前关卡中的 Actor 数量
-            - python_version: Python 版本信息
-            - mcp_server_status: MCP 服务器状态
+            Dict containing:
+            - status: "connected" | "error"
+            - paths.project_dir, paths.source_dirs, paths.engine_dir, paths.log_dir, paths.unreal_api
+            - current_level, actor_count
+            - engine_info.editor_world_available
+            - python_info.version, python_info.platform
+            - mcp_server.port, mcp_server.status
         """
         try:
             import sys
             import platform
-            
-            # 获取当前关卡信息
+
+            project_dir = unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir())
+
+            # paths
+            source_dir = unreal.Paths.convert_relative_path_to_full(unreal.Paths.game_source_dir())
+            script_dir = unreal.Paths.combine([source_dir, "..", "Script"])  # type: ignore[arg-type]
+            engine_dir = unreal.Paths.convert_relative_path_to_full(unreal.Paths.engine_dir())
+            log_dir = unreal.Paths.combine([project_dir, "Saved", "Logs"])  # type: ignore[arg-type]
+
+            unreal_api_path = unreal.Paths.combine([project_dir, "Intermediate", "PythonStub", "unreal.py"])  # type: ignore[arg-type]
+            if not unreal.Paths.file_exists(unreal_api_path):
+                unreal_api_path = None
+
+            # level info
             current_level = None
             actor_count = 0
+            world = None
             try:
                 world = unreal.EditorLevelLibrary.get_editor_world()
                 if world:
-                    # UE Python API 这里需要传入 world_context_object
-                    # （不同版本可能没有无参重载）
                     try:
                         current_level = unreal.EditorLevelLibrary.get_current_level_name(world)
                     except Exception:
@@ -298,8 +209,8 @@ def register_common_tools(mcp : UnrealMCP):
                     actor_count = len(all_actors) if all_actors else 0
             except Exception as e:
                 unreal.log_warning(f"获取关卡信息时出错: {str(e)}")
-            
-            # 获取 MCP 设置
+
+            # MCP settings
             mcp_port = None
             try:
                 setting = unreal.get_default_object(unreal.MCPSetting)
@@ -307,44 +218,47 @@ def register_common_tools(mcp : UnrealMCP):
                     mcp_port = setting.port
             except Exception as e:
                 unreal.log_warning(f"获取 MCP 设置时出错: {str(e)}")
-            
-            # 构建状态信息
-            status_info = {
+
+            return {
                 "status": "connected",
-                "engine_info": {
-                    "python_available": True,
-                    "editor_world_available": world is not None if 'world' in locals() else False,
+                "paths": {
+                    "project_dir": project_dir,
+                    "source_dirs": [source_dir, script_dir],
+                    "engine_dir": engine_dir,
+                    "log_dir": log_dir,
+                    "unreal_api": unreal_api_path,
                 },
-                "current_level": current_level or "未知",
+                "current_level": current_level or "unknown",
                 "actor_count": actor_count,
+                "engine_info": {
+                    "editor_world_available": world is not None,
+                },
                 "python_info": {
                     "version": sys.version,
                     "version_info": {
                         "major": sys.version_info.major,
                         "minor": sys.version_info.minor,
-                        "micro": sys.version_info.micro
+                        "micro": sys.version_info.micro,
                     },
                     "platform": platform.platform(),
-                    "executable": sys.executable
+                    "executable": sys.executable,
                 },
                 "mcp_server": {
                     "port": mcp_port,
-                    "status": "running" if mcp_port else "unknown"
+                    "status": "running" if mcp_port else "unknown",
                 },
             }
-            
-            return status_info
-            
+
         except Exception as e:
-            unreal.log_error(f"测试引擎状态时出错: {str(e)}")
+            unreal.log_error(f"获取引擎状态时出错: {str(e)}")
             import traceback
             unreal.log_error(traceback.format_exc())
             return {
                 "status": "error",
                 "error": str(e),
-                "error_type": type(e).__name__
+                "error_type": type(e).__name__,
             }
-    
+
     @mcp.game_thread_tool()
     def reload_all_tool():
         """热重载所有的tools"""
@@ -410,5 +324,3 @@ def register_common_tools(mcp : UnrealMCP):
         """
         return await mcp.call_domain_tool(domain, tool_name, arguments or {})
     # endregion Domain Tool 调度接口
-
-    

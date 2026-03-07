@@ -37,7 +37,7 @@ slate_tools.py
   通知：
     - slate_show_notification        在编辑器右下角弹出通知气泡
 
-所有交互工具均在游戏主线程（game_thread_tool）执行，以确保 Slate 线程安全。
+所有工具均注册在 "slate" domain 中（domain_tool, game_thread=True），通过 dispatch 机制调用。
 """
 
 from typing import Any, Dict, List, Optional
@@ -182,10 +182,10 @@ def register_slate_tools(mcp: UnrealMCP):
         return call_cpp_tools(unreal.MCPSlateTools.handle_find_widgets_by_type, params)
 
     # ─────────────────────────────────────────────────────────────────────────
-    # 交互工具（写入，game_thread_tool 确保主线程安全）
+    # 交互工具（写入/模拟输入）
     # ─────────────────────────────────────────────────────────────────────────
 
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("slate", game_thread=True)
     def slate_click_at_position(x: float, y: float, button: str = "Left") -> Dict[str, Any]:
         """
         在指定屏幕坐标（像素）模拟鼠标按下+抬起（单击）。
@@ -211,7 +211,7 @@ def register_slate_tools(mcp: UnrealMCP):
             {"x": x, "y": y, "button": button},
         )
 
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("slate", game_thread=True)
     def slate_send_text_input(text: str) -> Dict[str, Any]:
         """
         向当前键盘焦点控件逐字符发送文本输入（模拟用户打字）。
@@ -232,7 +232,7 @@ def register_slate_tools(mcp: UnrealMCP):
             {"text": text},
         )
 
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("slate", game_thread=True)
     def slate_send_key_press(
         key: str,
         shift: bool = False,
@@ -366,7 +366,7 @@ def register_slate_tools(mcp: UnrealMCP):
         """
         return call_cpp_tools(unreal.MCPSlateTools.handle_get_active_window, {})
 
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("slate", game_thread=True)
     def slate_move_window(
         x: float,
         y: float,
@@ -392,7 +392,7 @@ def register_slate_tools(mcp: UnrealMCP):
             params["window_title"] = window_title
         return call_cpp_tools(unreal.MCPSlateTools.handle_move_window, params)
 
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("slate", game_thread=True)
     def slate_resize_window(
         width: float,
         height: float,
@@ -418,7 +418,7 @@ def register_slate_tools(mcp: UnrealMCP):
             params["window_title"] = window_title
         return call_cpp_tools(unreal.MCPSlateTools.handle_resize_window, params)
 
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("slate", game_thread=True)
     def slate_close_window(
         window_index: int = -1,
         window_title: str = "",
@@ -441,7 +441,7 @@ def register_slate_tools(mcp: UnrealMCP):
             params["window_title"] = window_title
         return call_cpp_tools(unreal.MCPSlateTools.handle_close_window, params)
 
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("slate", game_thread=True)
     def slate_close_dock_tab(
         tab_label: str = "",
         tab_id: str = "",
@@ -467,7 +467,7 @@ def register_slate_tools(mcp: UnrealMCP):
             params["window_title"] = window_title
         return call_cpp_tools(unreal.MCPSlateTools.handle_close_dock_tab, params)
 
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("slate", game_thread=True)
     def slate_safe_close(
         tab_label: str = "",
         tab_id: str = "",
@@ -525,7 +525,7 @@ def register_slate_tools(mcp: UnrealMCP):
         """
         return call_cpp_tools(unreal.MCPSlateTools.handle_get_focused_widget, {})
 
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("slate", game_thread=True)
     def slate_set_keyboard_focus(x: float, y: float) -> Dict[str, Any]:
         """
         将键盘焦点设置到指定屏幕坐标处的 Widget。
@@ -547,7 +547,7 @@ def register_slate_tools(mcp: UnrealMCP):
     # Tab / 面板管理
     # ─────────────────────────────────────────────────────────────────────────
 
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("slate", game_thread=True)
     def slate_invoke_tab(tab_id: str) -> Dict[str, Any]:
         """
         通过 Tab ID 打开或切换到指定的 Unreal Editor 面板。
@@ -596,7 +596,7 @@ def register_slate_tools(mcp: UnrealMCP):
     # 滚动
     # ─────────────────────────────────────────────────────────────────────────
 
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("slate", game_thread=True)
     def slate_scroll_at_position(
         x: float,
         y: float,
@@ -624,7 +624,7 @@ def register_slate_tools(mcp: UnrealMCP):
     # 通知
     # ─────────────────────────────────────────────────────────────────────────
 
-    @mcp.game_thread_tool()
+    @mcp.domain_tool("slate", game_thread=True)
     def slate_show_notification(
         message: str,
         type: str = "Info",
