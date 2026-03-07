@@ -46,10 +46,17 @@ warnings.filterwarnings(
     message="Accessing the 'model_fields' attribute on the instance is deprecated",
 )
 
+# mcp SDK (stateless_http 模式) 每次请求创建的 sse_stream_reader 未被显式 aclose()，
+# GC 回收时 anyio 会持续输出 ResourceWarning。属上游 bug，此处抑制。
+warnings.filterwarnings(
+    "ignore",
+    category=ResourceWarning,
+    message=r"Unclosed <MemoryObject",
+)
+
 
 def init_mcp() -> UnrealMCP:
     setting: unreal.MCPSetting = unreal.get_default_object(unreal.MCPSetting)
-    # global_context.rebuild_event_loop()
     unreal.log(f"init mcp")
     mcp = UnrealMCP("Remote Unreal MCP", host="127.0.0.1", port=setting.port,stateless_http=True)
     register_all_tools(mcp)

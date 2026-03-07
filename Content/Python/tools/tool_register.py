@@ -1,5 +1,5 @@
 
-from RemoteMCP.Content.Python.foundation.mcp_app import UnrealMCP
+from foundation.mcp_app import UnrealMCP
 from foundation import global_context
 from mcp.server.fastmcp import FastMCP
 import tools.common_tools as common_register
