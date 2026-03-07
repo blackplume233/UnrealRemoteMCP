@@ -101,13 +101,13 @@ class UnrealMCP(FastMCP):
         self._domain_game_thread_tools.clear()
         self._domain_meta.clear()
 
-    # def reload_all_tools(self):
-    #     unreal.log("reload begin")
-    #     self.need_reload = False
-    #     from tools import tool_register
-
-    #     tool_register.reload_all_tools(self)
-    #     unreal.log("reload end")
+    def reload_all_tools(self):
+        unreal.log("reload begin")
+        self.need_reload = False
+        from tools import tool_register
+        self.clear_all()
+        tool_register.reload_all_tools(self)
+        unreal.log("reload end")
 
 
 
@@ -124,9 +124,9 @@ class UnrealMCP(FastMCP):
             return
         
         while not self.should_exit :
-            await self.server.on_tick(self.tick_count)
-            await asyncio.sleep(1)  # tick在主线程驱动
-            #unreal.log("Tick " + str(not self.should_exit))
+            if self.server is not None:
+                await self.server.on_tick(self.tick_count)
+            await asyncio.sleep(1)
             if self.need_reload:
                 self.reload_all_tools()
         await self.shutdown()
@@ -178,15 +178,11 @@ class UnrealMCP(FastMCP):
         unreal.log("Bridge Message: " + message)
         if type == unreal.MCPBridgeFuncType.EXIT:
             self.should_exit = True
-            self.shutdown()
-            pass
-        if type == unreal.MCPBridgeFuncType.START:
+        elif type == unreal.MCPBridgeFuncType.START:
             self.sync_run_func(self.async_run)
-            pass
-        if type == unreal.MCPBridgeFuncType.RELOAD:
+        elif type == unreal.MCPBridgeFuncType.RELOAD:
             self.need_reload = True
             self.reload_all_tools()
-            pass
 
     async def init_server(self) -> None:
         """Run the server using SSE transport."""
@@ -217,17 +213,17 @@ class UnrealMCP(FastMCP):
 
     async def start_up(self) -> None:
         await self.init_server()
+        assert self.server is not None, "init_server must set self.server"
         await self.start_up_server(self.server)
-        #self.init_bridge()
         unreal.log("Server started " + str(self.uuid))
 
     async def shutdown(self):
         unreal.log("begin stop")
         await self.tick()
-        self.server.force_exit = True
-        self.server.should_exit = True
-        await self.server.shutdown(sockets=None)
-        # self.clear_bridge()
+        if self.server is not None:
+            self.server.force_exit = True
+            self.server.should_exit = True
+            await self.server.shutdown(sockets=None)
         unreal.log("Server stopped " + str(self.uuid))
 
     async def tick(self) -> bool:

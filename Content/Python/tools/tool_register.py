@@ -1,4 +1,5 @@
 
+from RemoteMCP.Content.Python.foundation.mcp_app import UnrealMCP
 from foundation import global_context
 from mcp.server.fastmcp import FastMCP
 import tools.common_tools as common_register
@@ -78,7 +79,7 @@ def register_all_tools(mcp:UnrealMCP):
     bt_register.register_behaviortree_tools(mcp)
     slate_register.register_slate_tools(mcp)
     
-def reload_all_tools(mcp:FastMCP):
+def reload_all_tools(mcp:UnrealMCP):
     global_context.reload_all_tool_modules()
     register_all_tools(mcp)
     unreal.log("reload all tools")

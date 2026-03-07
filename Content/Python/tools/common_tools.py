@@ -110,7 +110,7 @@ def register_common_tools(mcp : UnrealMCP):
             if is_awaitable:
                 try:
                     with LogCaptureScope() as log_capture2:
-                        result = await result
+                        result = await result  # type: ignore[misc]
                         logs_post = f"{log_capture2.get_logs()}"
                 except Exception as await_exc:
                     logs = logs_pre + logs_post
@@ -164,7 +164,9 @@ def register_common_tools(mcp : UnrealMCP):
             unreal.log(command)
             command = like_str_parameter(command, "command", "")
             with LogCaptureScope() as log_capture:
-                editor_subsystem : unreal.UnrealEditorSubsystem  = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
+                editor_subsystem = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
+                if editor_subsystem is None:
+                    return CallToolResult(isError=True, content=[TextContent(type="text", text="EditorSubsystem not available")])
                 world  : Optional[unreal.World] = editor_subsystem.get_game_world()
                 if world is NULL:
                     world = editor_subsystem.get_editor_world()
@@ -198,7 +200,7 @@ def register_common_tools(mcp : UnrealMCP):
             # 获取项目根目录
             project_dir = unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir())
             # 组合 unrealpy 路径
-            unreal_py_api_path = unreal.Paths.combine([project_dir, "Intermediate", "PythonStub", "unreal.py"])
+            unreal_py_api_path = unreal.Paths.combine([project_dir, "Intermediate", "PythonStub", "unreal.py"])  # type: ignore[arg-type]
             # 检查目录是否存在
             
             if unreal.Paths.file_exists(unreal_py_api_path):
@@ -232,7 +234,7 @@ def register_common_tools(mcp : UnrealMCP):
         try:
             # 获取项目源码目录（通常为 Source 目录）
             source_dir = unreal.Paths.convert_relative_path_to_full(unreal.Paths.game_source_dir())
-            script_dir = unreal.Paths.combine([source_dir,"..","Script"])
+            script_dir = unreal.Paths.combine([source_dir,"..","Script"])  # type: ignore[arg-type]
             return str([source_dir, script_dir])
         except Exception as e:
             return f"获取源码目录失败: {str(e)}"
@@ -254,7 +256,7 @@ def register_common_tools(mcp : UnrealMCP):
             # 获取项目根目录
             project_dir = unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir())
             # 组合 unrealpy 路径
-            unreal_py_api_path = unreal.Paths.combine([project_dir, "Saved", "Logs"])
+            unreal_py_api_path = unreal.Paths.combine([project_dir, "Saved", "Logs"])  # type: ignore[arg-type]
             # 检查目录是否存在
             
             return unreal_py_api_path
