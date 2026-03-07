@@ -14,10 +14,10 @@ import types
 from typing import Any
 
 
-def register_all_tools(mcp:FastMCP):
+def register_all_tools(mcp:UnrealMCP):
     # AI(GPT-5.2): 接入 EdGraph/BehaviorTree 工具注册，使其随 init_mcp() / reload_all_tools() 生效。
     # 兼容：如果当前运行的 UnrealMCP 实例来自旧版本（缺少 domain meta API），在这里动态补齐。
-    def _ensure_domain_meta_api(mcp_obj: Any) -> None:
+    def _ensure_domain_meta_api(mcp_obj: FastMCP) -> None:
         if not hasattr(mcp_obj, "_domain_meta"):
             try:
                 setattr(mcp_obj, "_domain_meta", {})
