@@ -60,36 +60,36 @@ def init_mcp() -> UnrealMCP:
 
 
 def on_bridge(type: unreal.MCPBridgeFuncType, message: str):
+    """C++ → Python bridge 入口。注意：只有 START 分支会阻塞（unreal_run 启动 async 事件循环）。"""
+    # 统一声明一次，避免各分支重复类型标注导致 linter "declaration obscured" 警告
+    instance: Optional[UnrealMCP] = None
 
-    # unreal.log("Bridge Message: " + message)
-    # 特别注意，只有Start是在异步线程中执行的，该函数永远不会退出
     if type == unreal.MCPBridgeFuncType.START:
-        instance: Optional[UnrealMCP] = global_context.get_mcp_instance()
-        if not instance is None:
+        instance = global_context.get_mcp_instance()
+        if instance is not None:
             return False
         instance = init_mcp()
         instance.unreal_run()
-        pass
 
-    if type == unreal.MCPBridgeFuncType.EXIT:
-        instance: Optional[UnrealMCP] = global_context.get_mcp_instance()
-        if not instance is None:
+    elif type == unreal.MCPBridgeFuncType.EXIT:
+        # 只设标志位，由 async_run 循环检测后 await shutdown()；
+        # 不直接调用 shutdown()——它是 async 函数，在 sync 上下文中调用会产生未 await 的协程
+        instance = global_context.get_mcp_instance()
+        if instance is not None:
             instance.should_exit = True
-            asyncio.wait_for(instance.shutdown(),100)
             global_context.set_mcp_instance(None)
-        pass
 
-    if type == unreal.MCPBridgeFuncType.RELOAD:
-        instance: Optional[UnrealMCP] = global_context.get_mcp_instance()
+    elif type == unreal.MCPBridgeFuncType.RELOAD:
+        instance = global_context.get_mcp_instance()
         if instance is None:
             return True
         instance.clear_all()
         tool_register.reload_all_tools(instance)
-        pass
 
-    if type == unreal.MCPBridgeFuncType.HEARTBEAT_PACKET:
-        instance: Optional[UnrealMCP] = global_context.get_mcp_instance()
-        return not instance is None
+    elif type == unreal.MCPBridgeFuncType.HEARTBEAT_PACKET:
+        instance = global_context.get_mcp_instance()
+        return instance is not None
+
     return True
 
 def sync_tick() -> bool :

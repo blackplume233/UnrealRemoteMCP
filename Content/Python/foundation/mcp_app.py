@@ -94,14 +94,19 @@ class UnrealMCP(FastMCP):
         return
         
     def clear_all(self):
+        """清除所有已注册的工具、prompt 和 domain 信息，为热重载做准备。"""
         self._prompt_manager._prompts.clear()
         for exit_tool in self._tool_manager.list_tools():
             self._tool_manager.remove_tool(exit_tool.name)
+        # 必须同步清理 game_thread 标记，否则热重载后旧标记残留，
+        # 导致同名工具的线程调度行为与新注册的 decorator 不一致
+        self._game_thread_tool_set.clear()
         self._domain_tools.clear()
         self._domain_game_thread_tools.clear()
         self._domain_meta.clear()
 
     def reload_all_tools(self):
+        """热重载：清除所有工具注册 → 重新加载 Python 模块 → 重新注册全部工具。"""
         unreal.log("reload begin")
         self.need_reload = False
         from tools import tool_register
@@ -124,7 +129,7 @@ class UnrealMCP(FastMCP):
             return
         
         while not self.should_exit :
-            if self.server is not None:
+            if self.server is not None:  # guard: server 可能在 start_up 异常后为 None
                 await self.server.on_tick(self.tick_count)
             await asyncio.sleep(1)
             if self.need_reload:
@@ -175,6 +180,9 @@ class UnrealMCP(FastMCP):
     #     unreal.get_editor_subsystem(unreal.MCPSubsystem).clear_object() # type: ignore
 
     def on_bridge(self, type: unreal.MCPBridgeFuncType, message: str):
+        """C++ bridge 回调，在游戏线程中执行（非 async 上下文）。
+        EXIT 只设标志位，由 async_run 循环检测后 await shutdown()，
+        避免在 sync 方法中调用 async 函数导致协程丢失。"""
         unreal.log("Bridge Message: " + message)
         if type == unreal.MCPBridgeFuncType.EXIT:
             self.should_exit = True
@@ -220,7 +228,7 @@ class UnrealMCP(FastMCP):
     async def shutdown(self):
         unreal.log("begin stop")
         await self.tick()
-        if self.server is not None:
+        if self.server is not None:  # guard: start_up 失败时 server 可能未初始化
             self.server.force_exit = True
             self.server.should_exit = True
             await self.server.shutdown(sockets=None)

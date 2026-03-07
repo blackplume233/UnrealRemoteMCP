@@ -110,7 +110,7 @@ def register_common_tools(mcp : UnrealMCP):
             if is_awaitable:
                 try:
                     with LogCaptureScope() as log_capture2:
-                        result = await result  # type: ignore[misc]
+                        result = await result  # type: ignore[misc]  # 运行时已由 is_awaitable guard 确保可 await
                         logs_post = f"{log_capture2.get_logs()}"
                 except Exception as await_exc:
                     logs = logs_pre + logs_post
@@ -165,7 +165,7 @@ def register_common_tools(mcp : UnrealMCP):
             command = like_str_parameter(command, "command", "")
             with LogCaptureScope() as log_capture:
                 editor_subsystem = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
-                if editor_subsystem is None:
+                if editor_subsystem is None:  # PIE 未启动或 subsystem 被回收时可能为 None
                     return CallToolResult(isError=True, content=[TextContent(type="text", text="EditorSubsystem not available")])
                 world  : Optional[unreal.World] = editor_subsystem.get_game_world()
                 if world is NULL:
@@ -200,6 +200,7 @@ def register_common_tools(mcp : UnrealMCP):
             # 获取项目根目录
             project_dir = unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir())
             # 组合 unrealpy 路径
+            # type: ignore[arg-type] — UE Python stub 声明 Paths.combine 参数为 Array[str]，实际接受 list[str]
             unreal_py_api_path = unreal.Paths.combine([project_dir, "Intermediate", "PythonStub", "unreal.py"])  # type: ignore[arg-type]
             # 检查目录是否存在
             
