@@ -797,9 +797,9 @@ def register_edit_tool( mcp:UnrealMCP):
             Dict containing success status and widget path
         """
         params = {
-            "widget_name": widget_name,
+            "name": widget_name,
             "parent_class": parent_class,
-            "path": path
+            "path": path,
         }
         return call_cpp_tools(unreal.MCPUMGTools.handle_create_umg_widget_blueprint, params)
     @mcp.domain_tool("umg")
@@ -829,13 +829,13 @@ def register_edit_tool( mcp:UnrealMCP):
             Dict containing success status and text block properties
         """
         params = {
-            "widget_name": widget_name,
-            "text_block_name": text_block_name,
+            "blueprint_name": widget_name,
+            "widget_name": text_block_name,
             "text": text,
             "position": position,
             "size": size,
             "font_size": font_size,
-            "color": color
+            "color": color,
         }
         return call_cpp_tools(unreal.MCPUMGTools.handle_add_text_block_to_widget, params)
     @mcp.domain_tool("umg")
@@ -867,14 +867,14 @@ def register_edit_tool( mcp:UnrealMCP):
             Dict containing success status and button properties
         """
         params = {
-            "widget_name": widget_name,
-            "button_name": button_name,
+            "blueprint_name": widget_name,
+            "widget_name": button_name,
             "text": text,
             "position": position,
-            "size": size,   
+            "size": size,
             "font_size": font_size,
             "color": color,
-            "background_color": background_color
+            "background_color": background_color,
         }
         return call_cpp_tools(unreal.MCPUMGTools.handle_add_button_to_widget, params)   
     
@@ -899,11 +899,11 @@ def register_edit_tool( mcp:UnrealMCP):
             Dict containing success status and binding information
         """
         params = {
-            "widget_name": widget_name,
-            "widget_component_name": widget_component_name,
+            "blueprint_name": widget_name,
+            "widget_name": widget_component_name,
             "event_name": event_name,
-            "function_name": function_name
-        }   
+            "function_name": function_name,
+        }
         return call_cpp_tools(unreal.MCPUMGTools.handle_bind_widget_event, params)
     @mcp.domain_tool("umg")
     def add_widget_to_viewport(
@@ -922,8 +922,8 @@ def register_edit_tool( mcp:UnrealMCP):
             Dict containing success status and widget instance information
         """
         params = {
-            "widget_name": widget_name,
-            "z_order": z_order
+            "blueprint_name": widget_name,
+            "z_order": z_order,
         }
         return call_cpp_tools(unreal.MCPUMGTools.handle_add_widget_to_viewport, params)
     @mcp.domain_tool("umg")
@@ -947,9 +947,9 @@ def register_edit_tool( mcp:UnrealMCP):
             Dict containing success status and binding information
         """
         params = {
-            "widget_name": widget_name,
-            "text_block_name": text_block_name,
-            "binding_property": binding_property,
-            "binding_type": binding_type
+            "blueprint_name": widget_name,
+            "widget_name": text_block_name,
+            "binding_name": binding_property,
+            "binding_type": binding_type,
         }
         return call_cpp_tools(unreal.MCPUMGTools.handle_set_text_block_binding, params)
