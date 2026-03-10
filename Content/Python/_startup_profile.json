@@ -1,0 +1,125 @@
+{
+  "wall_start": 1772893376.1099823,
+  "phases": [
+    {
+      "phase": "script_start",
+      "wall": 1772893376.1099823,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "import asyncio",
+      "wall": 1772893376.156885,
+      "elapsed_ms": 46.35
+    },
+    {
+      "phase": "import pickle",
+      "wall": 1772893376.1593995,
+      "elapsed_ms": 2.76
+    },
+    {
+      "phase": "import sys",
+      "wall": 1772893376.1593995,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "import importlib",
+      "wall": 1772893376.1593995,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "import typing",
+      "wall": 1772893376.1593995,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "import uuid",
+      "wall": 1772893376.1604006,
+      "elapsed_ms": 1.16
+    },
+    {
+      "phase": "from tools import tool_register (triggers mcp chain)",
+      "wall": 1772893376.8015068,
+      "elapsed_ms": 640.37
+    },
+    {
+      "phase": "from tools.tool_register import register_all_tools",
+      "wall": 1772893376.8015068,
+      "elapsed_ms": 0.01
+    },
+    {
+      "phase": "import unreal",
+      "wall": 1772893376.8015068,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "import os",
+      "wall": 1772893376.8015068,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "from foundation import log_handler",
+      "wall": 1772893376.8015068,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "import warnings",
+      "wall": 1772893376.8015068,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "from foundation.mcp_app import UnrealMCP",
+      "wall": 1772893376.8015068,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "from foundation import global_context",
+      "wall": 1772893376.8015068,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "import tools.common_tools",
+      "wall": 1772893376.8015068,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "import tools.resource",
+      "wall": 1772893376.8015068,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "import tools.edit_tools",
+      "wall": 1772893376.8015068,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "global_context.reload_all_modules()",
+      "wall": 1772893376.811081,
+      "elapsed_ms": 9.94
+    },
+    {
+      "phase": "setup_logging",
+      "wall": 1772893376.811081,
+      "elapsed_ms": 0.06
+    },
+    {
+      "phase": "warnings_setup",
+      "wall": 1772893376.811081,
+      "elapsed_ms": 0.1
+    },
+    {
+      "phase": "function_defs_done",
+      "wall": 1772893376.811081,
+      "elapsed_ms": 0.0
+    },
+    {
+      "phase": "init_bridge() done",
+      "wall": 1772893376.811081,
+      "elapsed_ms": 0.16
+    },
+    {
+      "phase": "SETUPBRIDGE_TOTAL",
+      "wall": 1772893376.811081,
+      "elapsed_ms": 700.95
+    }
+  ]
+}
