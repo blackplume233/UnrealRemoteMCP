@@ -41,6 +41,7 @@ public:
 	}
 
 	virtual void Tick(float DeltaTime) override;
+	virtual void Deinitialize() override;
 
 #pragma endregion
 	void PostEngineInit();
@@ -67,8 +68,10 @@ private:
 	UFUNCTION(BlueprintCallable,Category="MCPLibrary|RemoteMCP")
 	void ClearObject();
 private:
-	//UPROPERTY()
-	inline static FMCPObject MCPContext;
+	// Keep delegate wrappers reachable by GC; a static non-UPROPERTY FMCPObject can
+	// leave Python delegate wrappers dangling and crash inside delegate dispatch.
+	UPROPERTY(Transient)
+	FMCPObject MCPContext;
 	TFuture<void> RunTread;
 	int TickCount = 0;
 	static constexpr int TickInterval = 2;

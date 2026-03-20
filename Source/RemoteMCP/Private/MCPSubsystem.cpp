@@ -5,6 +5,17 @@
 #include "IPythonScriptPlugin.h"
 #include "MCPSetting.h"
 
+namespace
+{
+	void ResetMCPObject(FMCPObject& Context)
+	{
+		Context.Bridge.Unbind();
+		Context.Tick.Unbind();
+		Context.GUID.Reset();
+		Context.PythonObjectHandle = nullptr;
+	}
+}
+
 void UMCPSubsystem::Tick(float DeltaTime)
 {
 	if (!MCPContext.IsRunning())
@@ -35,6 +46,13 @@ void UMCPSubsystem::Tick(float DeltaTime)
 			StopMCP();
 		}
 	}
+}
+
+void UMCPSubsystem::Deinitialize()
+{
+	StopMCP();
+	ClearObject();
+	Super::Deinitialize();
 }
 
 void UMCPSubsystem::PostEngineInit()
@@ -107,13 +125,15 @@ UMCPSubsystem* UMCPSubsystem::Get()
 
 void UMCPSubsystem::SetupObject(FMCPObject Context)
 {
+	ResetMCPObject(MCPContext);
 	this->MCPContext = Context;
 	WaitStart = true;
 }
 
 void UMCPSubsystem::ClearObject()
 {
-	this->MCPContext = FMCPObject();
+	ResetMCPObject(MCPContext);
+	WaitStart = false;
 }
 
 void UMCPSubsystem::StartMCP()
@@ -156,15 +176,24 @@ void UMCPSubsystem::Reload()
 
 void UMCPSubsystem::StopMCP()
 {
-	if (!MCPContext.IsRunning())
+	if (!MCPContext.Bridge.IsBound())
+	{
+		ClearObject();
 		return;
+	}
+
+	if (!MCPContext.IsRunning())
+	{
+		ClearObject();
+		return;
+	}
 	if (MCPContext.Bridge.IsBound())
 	{
 		auto _ = MCPContext.Bridge.Execute(EMCPBridgeFuncType::Exit, TEXT("MCP Stopped"));
 		RunTread.WaitFor(FTimespan::FromSeconds(100));
 	}
 
-	//ClearObject();
+	ClearObject();
 }
 
 EMCPServerState UMCPSubsystem::GetMCPServeState() const

@@ -105,8 +105,9 @@ def sync_tick() -> bool :
         return False
     try:
         instance.sync_tick()
-    except:
-        unreal.log_error(f"tick with execption {e.args}")
+    except Exception as e:
+        unreal.log_error(f"tick with exception {e!r}")
+        return False
     return True
 
 

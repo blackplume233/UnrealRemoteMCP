@@ -11,6 +11,95 @@ import unreal
 from foundation.utility import like_str_parameter
 
 
+def _resolve_world_context() -> Dict[str, Any]:
+    editor_subsystem = None
+    level_subsystem = None
+    game_world = None
+    editor_world = None
+    is_in_pie = False
+
+    try:
+        editor_subsystem = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
+    except Exception:
+        editor_subsystem = None
+
+    try:
+        level_subsystem = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
+        if level_subsystem:
+            is_in_pie = bool(level_subsystem.is_in_play_in_editor())
+    except Exception:
+        level_subsystem = None
+
+    if editor_subsystem:
+        try:
+            game_world = editor_subsystem.get_game_world()
+        except Exception:
+            game_world = None
+        try:
+            editor_world = editor_subsystem.get_editor_world()
+        except Exception:
+            editor_world = None
+
+    world = game_world or editor_world
+    world_source = "game" if game_world else "editor" if editor_world else "none"
+
+    return {
+        "world": world,
+        "game_world": game_world,
+        "editor_world": editor_world,
+        "world_source": world_source,
+        "is_in_pie": is_in_pie,
+    }
+
+
+def _describe_world(world_context: Dict[str, Any]) -> Dict[str, Any]:
+    world = world_context["world"]
+    current_level = None
+    actor_count = 0
+    world_name = None
+    world_type = None
+
+    if world:
+        try:
+            world_name = world.get_name()
+        except Exception:
+            world_name = None
+
+        try:
+            world_type = str(world.world_type)
+        except Exception:
+            world_type = None
+
+        try:
+            current_level = unreal.GameplayStatics.get_current_level_name(world, True)
+        except Exception:
+            if world_context["world_source"] == "editor":
+                try:
+                    current_level = unreal.EditorLevelLibrary.get_current_level_name(world)
+                except Exception:
+                    current_level = world_name
+            else:
+                current_level = world_name
+
+        try:
+            all_actors = unreal.GameplayStatics.get_all_actors_of_class(world, unreal.Actor)
+            actor_count = len(all_actors) if all_actors else 0
+        except Exception:
+            if world_context["world_source"] == "editor":
+                try:
+                    all_actors = unreal.EditorLevelLibrary.get_all_level_actors()
+                    actor_count = len(all_actors) if all_actors else 0
+                except Exception:
+                    actor_count = 0
+
+    return {
+        "current_level": current_level or "unknown",
+        "actor_count": actor_count,
+        "world_name": world_name,
+        "world_type": world_type,
+    }
+
+
 def register_common_tools(mcp : UnrealMCP):
     @mcp.game_thread_tool()
     def run_python_script(script: str):
@@ -195,18 +284,15 @@ def register_common_tools(mcp : UnrealMCP):
                 unreal_api_path = None
 
             # level info
-            current_level = None
-            actor_count = 0
-            world = None
+            world_context = _resolve_world_context()
+            world_info = {
+                "current_level": "unknown",
+                "actor_count": 0,
+                "world_name": None,
+                "world_type": None,
+            }
             try:
-                world = unreal.EditorLevelLibrary.get_editor_world()
-                if world:
-                    try:
-                        current_level = unreal.EditorLevelLibrary.get_current_level_name(world)
-                    except Exception:
-                        current_level = world.get_name()
-                    all_actors = unreal.EditorLevelLibrary.get_all_level_actors()
-                    actor_count = len(all_actors) if all_actors else 0
+                world_info = _describe_world(world_context)
             except Exception as e:
                 unreal.log_warning(f"获取关卡信息时出错: {str(e)}")
 
@@ -228,10 +314,15 @@ def register_common_tools(mcp : UnrealMCP):
                     "log_dir": log_dir,
                     "unreal_api": unreal_api_path,
                 },
-                "current_level": current_level or "unknown",
-                "actor_count": actor_count,
+                "current_level": world_info["current_level"],
+                "actor_count": world_info["actor_count"],
                 "engine_info": {
-                    "editor_world_available": world is not None,
+                    "editor_world_available": world_context["editor_world"] is not None,
+                    "game_world_available": world_context["game_world"] is not None,
+                    "is_in_play_in_editor": world_context["is_in_pie"],
+                    "world_source": world_context["world_source"],
+                    "world_name": world_info["world_name"],
+                    "world_type": world_info["world_type"],
                 },
                 "python_info": {
                     "version": sys.version,
