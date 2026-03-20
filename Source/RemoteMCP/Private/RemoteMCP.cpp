@@ -12,6 +12,7 @@
 #include "Widgets/Text/STextBlock.h"
 #include "ToolMenus.h"
 #include "MCPMisc.h"
+#include "MCPSetting.h"
 #include "MCPTools/LogCapture.h"
 
 class UEditorUtilitySubsystem;
@@ -122,9 +123,13 @@ namespace MCPCommand
 
 void FRemoteMCPModule::StartupModule()
 {
-	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
-	// LiveCoding verification: touch file to ensure a compile is required (safe no-op change).
-	
+	if (GetDefault<UMCPSetting>()->bEnable)
+	{
+		MCPRuntime = TStrongObjectPtr<UMCPSubsystem>(NewObject<UMCPSubsystem>());
+		UMCPSubsystem::Instance = MCPRuntime.Get();
+		MCPRuntime->Initialize();
+	}
+
 	FRemoteMCPStyle::Initialize();
 	FRemoteMCPStyle::ReloadTextures();
 
@@ -148,8 +153,12 @@ void FRemoteMCPModule::StartupModule()
 
 void FRemoteMCPModule::ShutdownModule()
 {
-	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
-	// we call this function before unloading the module.
+	if (MCPRuntime.IsValid())
+	{
+		MCPRuntime->Deinitialize();
+		UMCPSubsystem::Instance = nullptr;
+		MCPRuntime.Reset();
+	}
 
 	UToolMenus::UnRegisterStartupCallback(this);
 

@@ -1,9 +1,11 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "MCPSubsystem.h"
 #include "Async/Future.h"
 #include "IPythonScriptPlugin.h"
 #include "MCPSetting.h"
+
+UMCPSubsystem* UMCPSubsystem::Instance = nullptr;
 
 namespace
 {
@@ -52,7 +54,6 @@ void UMCPSubsystem::Deinitialize()
 {
 	StopMCP();
 	ClearObject();
-	Super::Deinitialize();
 }
 
 void UMCPSubsystem::PostEngineInit()
@@ -93,34 +94,14 @@ void UMCPSubsystem::SetupBridge()
 	IPythonScriptPlugin::Get()->ExecPythonCommandEx(CommandEx);
 }
 
-bool UMCPSubsystem::ShouldCreateSubsystem(UObject* Outer) const
+void UMCPSubsystem::Initialize()
 {
-	return Super::ShouldCreateSubsystem(Outer) && GetDefault<UMCPSetting>()->bEnable;
-}
-
-void UMCPSubsystem::Initialize(FSubsystemCollectionBase& Collection)
-{
-	Super::Initialize(Collection);
-	// AI(GPT-5.2): 修复编译错误：移除误入的调试字符串 "aaa"
 	UMCPSubsystem::PostEngineInit();
-	// FCoreUObjectDelegates::ReloadCompleteDelegate.AddLambda([this](EReloadCompleteReason Reason)
-	// {
-	// 	if (auto* SubSystem = UMCPSubsystem::Get())
-	// 	{
-	// 		SubSystem->StopMCP();
-	// 		ClearObject();
-	// 	}
-	// });
-}
-
-void UMCPSubsystem::PostCDOCompiled(const FPostCDOCompiledContext& Context)
-{
-	Super::PostCDOCompiled(Context);
 }
 
 UMCPSubsystem* UMCPSubsystem::Get()
 {
-	return GEditor->GetEditorSubsystem<UMCPSubsystem>();
+	return Instance;
 }
 
 void UMCPSubsystem::SetupObject(FMCPObject Context)

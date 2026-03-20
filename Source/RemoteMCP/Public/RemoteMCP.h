@@ -3,9 +3,11 @@
 #pragma once
 
 #include "Modules/ModuleManager.h"
+#include "UObject/StrongObjectPtr.h"
 
 class FToolBarBuilder;
 class FMenuBuilder;
+class UMCPSubsystem;
 
 class FRemoteMCPModule : public IModuleInterface
 {
@@ -27,4 +29,5 @@ private:
 private:
 	TSharedPtr<class FUICommandList> PluginCommands;
 	TArray<FAutoConsoleCommand> ConsoleCommands{};
+	TStrongObjectPtr<UMCPSubsystem> MCPRuntime;
 };
