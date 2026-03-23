@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "MCPTools/MCPUMGTools.h"
@@ -29,7 +29,25 @@
 #include "Kismet2/KismetEditorUtilities.h"
 #include "K2Node_Event.h"
 
+static UWidgetBlueprint* FindWidgetBlueprintByName(const FString& Name)
+{
+	if (Name.StartsWith(TEXT("/")))
+	{
+		return Cast<UWidgetBlueprint>(UEditorAssetLibrary::LoadAsset(Name));
+	}
 
+	FAssetRegistryModule& ARM = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	TArray<FAssetData> Assets;
+	ARM.Get().GetAssetsByClass(UWidgetBlueprint::StaticClass()->GetClassPathName(), Assets);
+	for (const FAssetData& Asset : Assets)
+	{
+		if (Asset.AssetName.ToString() == Name)
+		{
+			return Cast<UWidgetBlueprint>(Asset.GetAsset());
+		}
+	}
+	return nullptr;
+}
 
 
 FJsonObjectParameter UMCPUMGTools::HandleCreateUMGWidgetBlueprint(const FJsonObjectParameter& Params)
@@ -41,8 +59,15 @@ FJsonObjectParameter UMCPUMGTools::HandleCreateUMGWidgetBlueprint(const FJsonObj
 		return FUnrealMCPCommonUtils::CreateErrorResponse(TEXT("Missing 'name' parameter"));
 	}
 
-	// Create the full asset path
-	FString PackagePath = TEXT("/Game/Widgets/");
+	FString PackagePath;
+	if (!Params->TryGetStringField(TEXT("path"), PackagePath))
+	{
+		PackagePath = TEXT("/Game/Widgets");
+	}
+	if (!PackagePath.EndsWith(TEXT("/")))
+	{
+		PackagePath += TEXT("/");
+	}
 	FString AssetName = BlueprintName;
 	FString FullPath = PackagePath + AssetName;
 
@@ -113,15 +138,12 @@ FJsonObjectParameter UMCPUMGTools::HandleAddTextBlockToWidget(const FJsonObjectP
 		return FUnrealMCPCommonUtils::CreateErrorResponse(TEXT("Missing 'widget_name' parameter"));
 	}
 
-	// Find the Widget Blueprint
-	FString FullPath = TEXT("/Game/Widgets/") + BlueprintName;
-	UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(UEditorAssetLibrary::LoadAsset(FullPath));
+	UWidgetBlueprint* WidgetBlueprint = FindWidgetBlueprintByName(BlueprintName);
 	if (!WidgetBlueprint)
 	{
 		return FUnrealMCPCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Widget Blueprint '%s' not found"), *BlueprintName));
 	}
 
-	// Get optional parameters
 	FString InitialText = TEXT("New Text Block");
 	Params->TryGetStringField(TEXT("text"), InitialText);
 
@@ -146,11 +168,11 @@ FJsonObjectParameter UMCPUMGTools::HandleAddTextBlockToWidget(const FJsonObjectP
 	// Set initial text
 	TextBlock->SetText(FText::FromString(InitialText));
 
-	// Add to canvas panel
 	UCanvasPanel* RootCanvas = Cast<UCanvasPanel>(WidgetBlueprint->WidgetTree->RootWidget);
 	if (!RootCanvas)
 	{
-		return FUnrealMCPCommonUtils::CreateErrorResponse(TEXT("Root Canvas Panel not found"));
+		RootCanvas = WidgetBlueprint->WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("RootCanvas"));
+		WidgetBlueprint->WidgetTree->RootWidget = RootCanvas;
 	}
 
 	UCanvasPanelSlot* PanelSlot = RootCanvas->AddChildToCanvas(TextBlock);
@@ -176,9 +198,7 @@ FJsonObjectParameter UMCPUMGTools::HandleAddWidgetToViewport(const FJsonObjectPa
 		return FUnrealMCPCommonUtils::CreateErrorResponse(TEXT("Missing 'blueprint_name' parameter"));
 	}
 
-	// Find the Widget Blueprint
-	FString FullPath = TEXT("/Game/Widgets/") + BlueprintName;
-	UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(UEditorAssetLibrary::LoadAsset(FullPath));
+	UWidgetBlueprint* WidgetBlueprint = FindWidgetBlueprintByName(BlueprintName);
 	if (!WidgetBlueprint)
 	{
 		return FUnrealMCPCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Widget Blueprint '%s' not found"), *BlueprintName));
@@ -234,12 +254,10 @@ FJsonObjectParameter UMCPUMGTools::HandleAddButtonToWidget(const FJsonObjectPara
 		return Response;
 	}
 
-	// Load the Widget Blueprint
-	const FString BlueprintPath = FString::Printf(TEXT("/Game/Widgets/%s.%s"), *BlueprintName, *BlueprintName);
-	UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(UEditorAssetLibrary::LoadAsset(BlueprintPath));
+	UWidgetBlueprint* WidgetBlueprint = FindWidgetBlueprintByName(BlueprintName);
 	if (!WidgetBlueprint)
 	{
-		Response->SetStringField(TEXT("error"), FString::Printf(TEXT("Failed to load Widget Blueprint: %s"), *BlueprintPath));
+		Response->SetStringField(TEXT("error"), FString::Printf(TEXT("Widget Blueprint '%s' not found"), *BlueprintName));
 		return Response;
 	}
 
@@ -259,12 +277,11 @@ FJsonObjectParameter UMCPUMGTools::HandleAddButtonToWidget(const FJsonObjectPara
 		Button->AddChild(ButtonTextBlock);
 	}
 
-	// Get canvas panel and add button
 	UCanvasPanel* RootCanvas = Cast<UCanvasPanel>(WidgetBlueprint->WidgetTree->RootWidget);
 	if (!RootCanvas)
 	{
-		Response->SetStringField(TEXT("error"), TEXT("Root widget is not a Canvas Panel"));
-		return Response;
+		RootCanvas = WidgetBlueprint->WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("RootCanvas"));
+		WidgetBlueprint->WidgetTree->RootWidget = RootCanvas;
 	}
 
 	// Add to canvas and set position
@@ -282,9 +299,7 @@ FJsonObjectParameter UMCPUMGTools::HandleAddButtonToWidget(const FJsonObjectPara
 		}
 	}
 
-	// Save the Widget Blueprint
 	FKismetEditorUtilities::CompileBlueprint(WidgetBlueprint);
-	UEditorAssetLibrary::SaveAsset(BlueprintPath, false);
 
 	Response->SetBoolField(TEXT("success"), true);
 	Response->SetStringField(TEXT("widget_name"), WidgetName);
@@ -317,12 +332,10 @@ FJsonObjectParameter UMCPUMGTools::HandleBindWidgetEvent(const FJsonObjectParame
 		return Response;
 	}
 
-	// Load the Widget Blueprint
-	const FString BlueprintPath = FString::Printf(TEXT("/Game/Widgets/%s.%s"), *BlueprintName, *BlueprintName);
-	UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(UEditorAssetLibrary::LoadAsset(BlueprintPath));
+	UWidgetBlueprint* WidgetBlueprint = FindWidgetBlueprintByName(BlueprintName);
 	if (!WidgetBlueprint)
 	{
-		Response->SetStringField(TEXT("error"), FString::Printf(TEXT("Failed to load Widget Blueprint: %s"), *BlueprintPath));
+		Response->SetStringField(TEXT("error"), FString::Printf(TEXT("Widget Blueprint '%s' not found"), *BlueprintName));
 		return Response;
 	}
 
@@ -404,9 +417,7 @@ FJsonObjectParameter UMCPUMGTools::HandleBindWidgetEvent(const FJsonObjectParame
 		return Response;
 	}
 
-	// Save the Widget Blueprint
 	FKismetEditorUtilities::CompileBlueprint(WidgetBlueprint);
-	UEditorAssetLibrary::SaveAsset(BlueprintPath, false);
 
 	Response->SetBoolField(TEXT("success"), true);
 	Response->SetStringField(TEXT("event_name"), EventName);
@@ -439,12 +450,10 @@ FJsonObjectParameter UMCPUMGTools::HandleSetTextBlockBinding(const FJsonObjectPa
 		return Response;
 	}
 
-	// Load the Widget Blueprint
-	const FString BlueprintPath = FString::Printf(TEXT("/Game/Widgets/%s.%s"), *BlueprintName, *BlueprintName);
-	UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(UEditorAssetLibrary::LoadAsset(BlueprintPath));
+	UWidgetBlueprint* WidgetBlueprint = FindWidgetBlueprintByName(BlueprintName);
 	if (!WidgetBlueprint)
 	{
-		Response->SetStringField(TEXT("error"), FString::Printf(TEXT("Failed to load Widget Blueprint: %s"), *BlueprintPath));
+		Response->SetStringField(TEXT("error"), FString::Printf(TEXT("Widget Blueprint '%s' not found"), *BlueprintName));
 		return Response;
 	}
 
@@ -506,11 +515,38 @@ FJsonObjectParameter UMCPUMGTools::HandleSetTextBlockBinding(const FJsonObjectPa
 		}
 	}
 
-	// Save the Widget Blueprint
 	FKismetEditorUtilities::CompileBlueprint(WidgetBlueprint);
-	UEditorAssetLibrary::SaveAsset(BlueprintPath, false);
 
 	Response->SetBoolField(TEXT("success"), true);
 	Response->SetStringField(TEXT("binding_name"), BindingName);
 	return Response;
+}
+
+FJsonObjectParameter UMCPUMGTools::HandleClearWidgetTree(const FJsonObjectParameter& Params)
+{
+	FString BlueprintName;
+	if (!Params->TryGetStringField(TEXT("blueprint_name"), BlueprintName))
+	{
+		return FUnrealMCPCommonUtils::CreateErrorResponse(TEXT("Missing 'blueprint_name' parameter"));
+	}
+
+	UWidgetBlueprint* WidgetBlueprint = FindWidgetBlueprintByName(BlueprintName);
+	if (!WidgetBlueprint)
+	{
+		return FUnrealMCPCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Widget Blueprint '%s' not found"), *BlueprintName));
+	}
+
+	UWidgetTree* WidgetTree = WidgetBlueprint->WidgetTree;
+	WidgetTree->RootWidget = nullptr;
+
+	UCanvasPanel* RootCanvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("RootCanvas"));
+	WidgetTree->RootWidget = RootCanvas;
+
+	WidgetBlueprint->MarkPackageDirty();
+	FKismetEditorUtilities::CompileBlueprint(WidgetBlueprint);
+
+	FJsonObjectParameter ResultObj = MakeShared<FJsonObject>();
+	ResultObj->SetBoolField(TEXT("success"), true);
+	ResultObj->SetStringField(TEXT("blueprint_name"), BlueprintName);
+	return ResultObj;
 }

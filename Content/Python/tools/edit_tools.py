@@ -927,6 +927,25 @@ def register_edit_tool( mcp:UnrealMCP):
         }
         return call_cpp_tools(unreal.MCPUMGTools.handle_add_widget_to_viewport, params)
     @mcp.domain_tool("umg")
+    def clear_widget_tree(
+        ctx: Context,
+        widget_name: str,
+    ) -> Dict[str, Any]:
+        """
+        Clear all children from a Widget Blueprint's WidgetTree and reset with a fresh CanvasPanel root.
+        
+        Args:
+            widget_name: Name of the target Widget Blueprint
+            
+        Returns:
+            Dict containing success status
+        """
+        params = {
+            "blueprint_name": widget_name,
+        }
+        return call_cpp_tools(unreal.MCPUMGTools.handle_clear_widget_tree, params)
+
+    @mcp.domain_tool("umg")
     def set_text_block_binding(
         ctx: Context,
         widget_name: str,

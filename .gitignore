@@ -92,4 +92,11 @@ Content/Python/.vscode
 Content/Python/Lib/site-packages
 Lib/site-packages
 Resources/PlaceholderButtonIcon.svg
-_BuildPlugin
+**/_BuildPlugin/
+_BuildPlugin/
+Binaries/
+Intermediate/
+.mypy_cache/
+.git/
+**/__pycache__/
+
