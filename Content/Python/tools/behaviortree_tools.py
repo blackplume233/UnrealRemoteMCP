@@ -180,3 +180,36 @@ def register_behaviortree_tools(mcp: UnrealMCP):
             "handle_get_bt_auxiliary_nodes",
             {"op": "add_node", "graph_path": graph_path, "bt_node_class": bt_node_class, "pos_x": int(pos_x), "pos_y": int(pos_y)},
         )
+
+    @mcp.domain_tool("behaviortree")
+    def bt_add_service(parent_node_path: str, service_class: str, pos_x: int = 0, pos_y: int = 0):
+        """
+        为 BT 节点添加 Service（通过 C++ Bridge，绕开 Python 侧 Services 受保护属性）。
+
+        参数:
+          parent_node_path: 父节点（Task/Composite）的完整路径
+          service_class: Service 类名，如 "BTService_DefaultFocus" 或 "/Script/AIModule.BTService_DefaultFocus"
+          pos_x/pos_y: 可选，节点位置
+        """
+        parent_node_path = like_str_parameter(parent_node_path, "parent_node_path", "").strip()
+        service_class = like_str_parameter(service_class, "service_class", "").strip()
+        return _call_bridge_or_editor_tools(
+            "handle_get_bt_auxiliary_nodes",
+            {"op": "add_service", "parent_node_path": parent_node_path, "service_class": service_class, "pos_x": int(pos_x), "pos_y": int(pos_y)},
+        )
+
+    @mcp.domain_tool("behaviortree")
+    def bt_remove_service(parent_node_path: str, service_node_path: str):
+        """
+        从 BT 节点上移除 Service（通过 C++ Bridge，同时清理父节点 Services 数组和 Graph->Nodes）。
+
+        参数:
+          parent_node_path: 父节点（Task/Composite）的完整路径
+          service_node_path: 要移除的 Service 节点的完整路径
+        """
+        parent_node_path = like_str_parameter(parent_node_path, "parent_node_path", "").strip()
+        service_node_path = like_str_parameter(service_node_path, "service_node_path", "").strip()
+        return _call_bridge_or_editor_tools(
+            "handle_get_bt_auxiliary_nodes",
+            {"op": "remove_service", "parent_node_path": parent_node_path, "service_node_path": service_node_path},
+        )

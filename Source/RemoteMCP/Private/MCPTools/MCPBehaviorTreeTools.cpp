@@ -601,6 +601,62 @@ FJsonObjectParameter UMCPBehaviorTreeTools::HandleGetBTAuxiliaryNodes(const FJso
 			}
 			return FUnrealMCPCommonUtils::CreateSuccessResponse(NodeObj);
 		}
+		if (Op.Equals(TEXT("remove_service"), ESearchCase::IgnoreCase))
+		{
+			FString ParentNodePath;
+			if (!Params->TryGetStringField(TEXT("parent_node_path"), ParentNodePath))
+			{
+				return FUnrealMCPCommonUtils::CreateErrorResponse(TEXT("Missing 'parent_node_path' parameter"));
+			}
+			FString ServiceNodePath;
+			if (!Params->TryGetStringField(TEXT("service_node_path"), ServiceNodePath))
+			{
+				return FUnrealMCPCommonUtils::CreateErrorResponse(TEXT("Missing 'service_node_path' parameter"));
+			}
+
+			UBehaviorTreeGraphNode* ParentNode = LoadObject<UBehaviorTreeGraphNode>(nullptr, *ParentNodePath);
+			if (!ParentNode)
+			{
+				return FUnrealMCPCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Parent node not found: %s"), *ParentNodePath));
+			}
+
+			UBehaviorTreeGraph* Graph = Cast<UBehaviorTreeGraph>(ParentNode->GetGraph());
+			if (!Graph)
+			{
+				return FUnrealMCPCommonUtils::CreateErrorResponse(TEXT("Parent node has no BehaviorTreeGraph"));
+			}
+
+			UBehaviorTreeGraphNode* FoundService = nullptr;
+			for (auto& Svc : ParentNode->Services)
+			{
+				if (Svc && Svc->GetPathName() == ServiceNodePath)
+				{
+					FoundService = Svc;
+					break;
+				}
+			}
+
+			if (!FoundService)
+			{
+				return FUnrealMCPCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Service not found in parent's Services array: %s"), *ServiceNodePath));
+			}
+
+			Graph->Modify();
+			ParentNode->Modify();
+
+			ParentNode->Services.Remove(FoundService);
+			FoundService->BreakAllNodeLinks();
+			Graph->RemoveNode(FoundService);
+
+			Graph->UpdateAsset();
+			Graph->GetOuter()->MarkPackageDirty();
+
+			TSharedPtr<FJsonObject> ResultObj = MakeShared<FJsonObject>();
+			ResultObj->SetStringField(TEXT("parent_node_path"), ParentNode->GetPathName());
+			ResultObj->SetStringField(TEXT("removed_service"), ServiceNodePath);
+			ResultObj->SetNumberField(TEXT("remaining_services"), ParentNode->Services.Num());
+			return FUnrealMCPCommonUtils::CreateSuccessResponse(ResultObj);
+		}
         return FUnrealMCPCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Unknown op: %s"), *Op));
     }
 
