@@ -178,3 +178,130 @@ def register_edgraph_tools(mcp: UnrealMCP):
             "height": height,
             "auto_save_asset_path": auto_save_asset_path,
         })
+
+    @mcp.domain_tool("edgraph")
+    def edgraph_add_node(
+        graph_path: str,
+        node_class: str,
+        pos_x: float = 0,
+        pos_y: float = 0,
+        import_text: Any = None,
+        pin_defaults: Any = None,
+        auto_save_asset_path: str = "",
+    ) -> Dict[str, Any]:
+        """
+        在图中创建任意 UEdGraphNode 子类。
+
+        Args:
+            graph_path: 目标图的 UObject 路径
+            node_class: 节点类名（如 K2Node_CallFunction, K2Node_IfThenElse）
+            pos_x, pos_y: 节点位置
+            import_text: dict，{PropertyName: "ImportText value"}，在 AllocateDefaultPins 前应用
+            pin_defaults: dict，{PinName: "default value"}，在 AllocateDefaultPins 后应用
+            auto_save_asset_path: 可选，创建后保存资产
+        """
+        params = {
+            "graph_path": graph_path,
+            "node_class": node_class,
+            "pos_x": pos_x,
+            "pos_y": pos_y,
+        }
+        if import_text is not None:
+            if isinstance(import_text, str):
+                import json as _json
+                import_text = _json.loads(import_text)
+            params["import_text"] = import_text
+        if pin_defaults is not None:
+            if isinstance(pin_defaults, str):
+                import json as _json
+                pin_defaults = _json.loads(pin_defaults)
+            params["pin_defaults"] = pin_defaults
+        if auto_save_asset_path:
+            params["auto_save_asset_path"] = auto_save_asset_path
+        return call_cpp_tools(unreal.MCPEdGraphTools.handle_add_node, params)
+
+    @mcp.domain_tool("edgraph")
+    def edgraph_set_pin_default(
+        graph_path: str,
+        node_guid: str,
+        pin_name: str,
+        default_value: str = "",
+        default_object: str = "",
+        pin_direction: str = "",
+        auto_save_asset_path: str = "",
+    ) -> Dict[str, Any]:
+        """
+        设置/清除节点引脚的默认值。
+
+        Args:
+            graph_path: 图路径
+            node_guid: 节点 GUID
+            pin_name: 引脚名称
+            default_value: 默认值的文本表示
+            default_object: Object 类型引脚的资产路径
+            pin_direction: "Input" 或 "Output"（用于同名引脚消歧）
+        """
+        return call_cpp_tools(unreal.MCPEdGraphTools.handle_set_pin_default_value, {
+            "graph_path": graph_path,
+            "node_guid": node_guid,
+            "pin_name": pin_name,
+            "default_value": default_value,
+            "default_object": default_object,
+            "pin_direction": pin_direction,
+            "auto_save_asset_path": auto_save_asset_path,
+        })
+
+    @mcp.domain_tool("edgraph")
+    def edgraph_compile(asset_path: str) -> Dict[str, Any]:
+        """
+        编译 Blueprint 资产并返回诊断信息。
+
+        Returns: {status, has_error, messages[{severity, message}]}
+        """
+        return call_cpp_tools(unreal.MCPEdGraphTools.handle_compile_asset, {
+            "asset_path": asset_path,
+        })
+
+    @mcp.domain_tool("edgraph")
+    def edgraph_create_graph(
+        asset_path: str,
+        graph_name: str,
+        graph_type: str = "function",
+    ) -> Dict[str, Any]:
+        """
+        在 Blueprint 中创建函数或宏子图。
+
+        Args:
+            asset_path: Blueprint 资产路径
+            graph_name: 新图名称
+            graph_type: "function"（默认）或 "macro"
+        """
+        return call_cpp_tools(unreal.MCPEdGraphTools.handle_create_graph, {
+            "asset_path": asset_path,
+            "graph_name": graph_name,
+            "graph_type": graph_type,
+        })
+
+    @mcp.domain_tool("edgraph")
+    def edgraph_delete_graph(
+        asset_path: str,
+        graph_name: str = "",
+        graph_path: str = "",
+    ) -> Dict[str, Any]:
+        """删除 Blueprint 中的子图（函数/宏）。"""
+        return call_cpp_tools(unreal.MCPEdGraphTools.handle_delete_graph, {
+            "asset_path": asset_path,
+            "graph_name": graph_name,
+            "graph_path": graph_path,
+        })
+
+    @mcp.domain_tool("edgraph")
+    def edgraph_get_asset_info(asset_path: str) -> Dict[str, Any]:
+        """
+        查询蓝图资产元数据：父类、变量、函数、接口、组件、所有图。
+
+        Returns: {parent_class, variables[], functions[], interfaces[], components[], graphs[]}
+        """
+        return call_cpp_tools(unreal.MCPEdGraphTools.handle_get_asset_info, {
+            "asset_path": asset_path,
+        })
