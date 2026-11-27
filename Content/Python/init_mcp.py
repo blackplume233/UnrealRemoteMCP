@@ -32,6 +32,8 @@ import tools.edit_tools as edit_register
 
 global_context.reload_all_modules()
 
+from foundation.native_mcp import NativeUnrealMCP
+
 if global_context.get_counter() == 0:
     unreal.log("setup logging")
     log_handler.setup_logging()
@@ -71,7 +73,30 @@ def on_bridge(type: unreal.MCPBridgeFuncType, message: str):
     # 统一声明一次，避免各分支重复类型标注导致 linter "declaration obscured" 警告
     instance: Optional[UnrealMCP] = None
 
-    if type == unreal.MCPBridgeFuncType.START:
+    if type == unreal.MCPBridgeFuncType.START_NATIVE:
+        if global_context.get_mcp_instance() is not None:
+            return False
+        native = NativeUnrealMCP()
+        try:
+            register_all_tools(native)
+            if not native.publish_tools():
+                native.stop()
+                return False
+        except Exception:
+            native.stop()
+            raise
+        global_context.set_mcp_instance(native)
+
+    elif type == unreal.MCPBridgeFuncType.INVOKE_NATIVE:
+        instance = global_context.get_mcp_instance()
+        return isinstance(instance, NativeUnrealMCP) and instance.invoke(message)
+
+    elif type == unreal.MCPBridgeFuncType.CANCEL_NATIVE:
+        instance = global_context.get_mcp_instance()
+        if isinstance(instance, NativeUnrealMCP):
+            instance.cancel(message)
+
+    elif type == unreal.MCPBridgeFuncType.START:
         instance = global_context.get_mcp_instance()
         if instance is not None:
             return False
@@ -83,15 +108,21 @@ def on_bridge(type: unreal.MCPBridgeFuncType, message: str):
         # 不直接调用 shutdown()——它是 async 函数，在 sync 上下文中调用会产生未 await 的协程
         instance = global_context.get_mcp_instance()
         if instance is not None:
-            instance.should_exit = True
             global_context.set_mcp_instance(None)
+            if isinstance(instance, NativeUnrealMCP):
+                instance.stop()
+            else:
+                instance.should_exit = True
 
     elif type == unreal.MCPBridgeFuncType.RELOAD:
         instance = global_context.get_mcp_instance()
         if instance is None:
             return True
-        instance.clear_all()
-        tool_register.reload_all_tools(instance)
+        if isinstance(instance, NativeUnrealMCP):
+            instance.reload_all_tools()
+        else:
+            instance.clear_all()
+            tool_register.reload_all_tools(instance)
 
     elif type == unreal.MCPBridgeFuncType.HEARTBEAT_PACKET:
         instance = global_context.get_mcp_instance()

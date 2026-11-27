@@ -15,6 +15,9 @@ enum EMCPBridgeFuncType
 	Start,
 	Reload,
 	HeartbeatPacket,
+	StartNative,
+	InvokeNative,
+	CancelNative,
 };
 
 

@@ -510,7 +510,7 @@ FJsonObjectParameter UMCPEdGraphTools::HandleSetNodeProperties(const FJsonObject
 	for (const auto& Pair : (*PropertiesPtr)->Values)
 	{
 		FString ErrorMessage;
-		bool bOk = FUnrealMCPCommonUtils::SetObjectProperty(Node, Pair.Key, Pair.Value, ErrorMessage);
+		bool bOk = FUnrealMCPCommonUtils::SetObjectProperty(Node, FString(Pair.Key.Len(), *Pair.Key), Pair.Value, ErrorMessage);
 		if (bOk)
 		{
 			AppliedObj->SetField(Pair.Key, Pair.Value);
@@ -934,7 +934,7 @@ FJsonObjectParameter UMCPEdGraphTools::HandleAddNode(const FJsonObjectParameter&
 				continue;
 			}
 
-			UEdGraphPin* Pin = FindPinOnNode(Node, Pair.Key);
+			UEdGraphPin* Pin = FindPinOnNode(Node, FString(Pair.Key.Len(), *Pair.Key));
 			if (!Pin)
 			{
 				PinErrors->SetStringField(Pair.Key, TEXT("Pin not found"));

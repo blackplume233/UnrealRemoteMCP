@@ -8,6 +8,8 @@
 #include "UObject/Object.h"
 #include "MCPSubsystem.generated.h"
 
+class FRemoteMCPNative;
+
 
 
 /**
@@ -65,11 +67,16 @@ private:
 	void SetupObject(FMCPObject Context);
 	UFUNCTION(BlueprintCallable,Category="MCPLibrary|RemoteMCP")
 	void ClearObject();
+	UFUNCTION(BlueprintCallable, Category="MCPLibrary|RemoteMCP")
+	bool PublishNativeTools(const FString& ToolsJson);
+	UFUNCTION(BlueprintCallable, Category="MCPLibrary|RemoteMCP")
+	void CompleteNativeTool(const FString& CallId, const FString& ResultJson);
 private:
 	// Keep delegate wrappers reachable by GC; a static non-UPROPERTY FMCPObject can
 	// leave Python delegate wrappers dangling and crash inside delegate dispatch.
 	UPROPERTY(Transient)
 	FMCPObject MCPContext;
+	TSharedPtr<FRemoteMCPNative> NativeMCP;
 	TFuture<void> RunTread;
 	int TickCount = 0;
 	static constexpr int TickInterval = 2;

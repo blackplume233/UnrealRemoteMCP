@@ -298,12 +298,13 @@ def register_common_tools(mcp : UnrealMCP):
 
             # MCP settings
             mcp_port = None
-            try:
-                setting = unreal.get_default_object(unreal.MCPSetting)
-                if setting:
-                    mcp_port = setting.port
-            except Exception as e:
-                unreal.log_warning(f"获取 MCP 设置时出错: {str(e)}")
+            if not mcp.native_backend:
+                try:
+                    setting = unreal.get_default_object(unreal.MCPSetting)
+                    if setting:
+                        mcp_port = setting.port
+                except Exception as e:
+                    unreal.log_warning(f"获取 MCP 设置时出错: {str(e)}")
 
             return {
                 "status": "connected",
@@ -336,7 +337,8 @@ def register_common_tools(mcp : UnrealMCP):
                 },
                 "mcp_server": {
                     "port": mcp_port,
-                    "status": "running" if mcp_port else "unknown",
+                    "status": "running" if mcp.native_backend or mcp_port else "unknown",
+                    "backend": "native" if mcp.native_backend else "standalone",
                 },
             }
 
