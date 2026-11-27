@@ -226,7 +226,7 @@ FJsonObjectParameter UMCPEditorTools::HandleDeleteActor(const FJsonObjectParamet
 
             // 构建结果JSON对象
             FJsonObjectParameter ResultObj = MakeShared<FJsonObject>();
-            ResultObj->SetObjectField(TEXT("deleted_actor"), ActorInfo);
+            ResultObj->SetObjectField(TEXT("deleted_actor"), ActorInfo.GetJsonObject());
             return ResultObj;
         }
     }

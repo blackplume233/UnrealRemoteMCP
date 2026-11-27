@@ -1,5 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
+using System.IO;
 using UnrealBuildTool;
 
 public class RemoteMCP : ModuleRules
@@ -7,6 +8,15 @@ public class RemoteMCP : ModuleRules
 	public RemoteMCP(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+
+		// Use the optional engine plugin through its virtual interface, without linking to its DLL.
+		string McpSource = Path.Combine(EngineDirectory, "Plugins", "Experimental", "ModelContextProtocol", "Source", "ModelContextProtocol");
+		bool HasNativeMcp = File.Exists(Path.Combine(McpSource, "Public", "IModelContextProtocolModule.h"));
+		PrivateDefinitions.Add(HasNativeMcp ? "REMOTE_MCP_WITH_NATIVE=1" : "REMOTE_MCP_WITH_NATIVE=0");
+		if (HasNativeMcp)
+		{
+			PrivateIncludePathModuleNames.Add("ModelContextProtocol");
+		}
 		
 		PublicIncludePaths.AddRange(
 			new string[] {

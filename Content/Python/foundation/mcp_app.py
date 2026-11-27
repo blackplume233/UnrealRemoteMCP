@@ -50,9 +50,10 @@ def _agent_dbg_log(*, hypothesisId: str, location: str, message: str, data: dict
         pass
 # endregion agent log (debug mode)
 class UnrealMCP(FastMCP):
-    def __init__(self, name: str | None = None, instructions: str | None = None, **settings: Any):
+    def __init__(self, name: str | None = None, instructions: str | None = None, *, native_backend: bool = False, **settings: Any):
         super().__init__(name=name, instructions=instructions, **settings)
     
+        self.native_backend = native_backend
         self.server : uvicorn.Server | None = None
         self.force_exit = False
         self.tick_count = 0
@@ -80,7 +81,8 @@ class UnrealMCP(FastMCP):
         # self.stateless_http = True
         #self.json_response = True
         #self.tick_loop =  asyncio.SelectorEventLoop()
-        global_context.rebuild_event_loop()
+        if not native_backend:
+            global_context.rebuild_event_loop()
 
     def sync_run_func(self, function: Any) -> None:
         # 运行函数
@@ -625,11 +627,11 @@ class UnrealMCP(FastMCP):
             if full_key in self._domain_game_thread_tools:
                 # 在 game thread 中执行
                 async def wrapped_call():
-                    return await tool.run(arguments)
+                    return await tool.run(arguments, context=self.get_context())
                 return await self.to_tick_thread(wrapped_call)
             else:
                 # 直接执行
-                return await tool.run(arguments)
+                return await tool.run(arguments, context=self.get_context())
         except Exception as e:
             import traceback
             error_info = f"Error executing domain tool {domain}/{tool_name}: {str(e)}\n{traceback.format_exc()}"

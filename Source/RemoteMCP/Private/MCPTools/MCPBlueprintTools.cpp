@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "MCPTools/MCPBlueprintTools.h"
@@ -1032,13 +1032,13 @@ FJsonObjectParameter UMCPBlueprintTools::HandleSetPawnProperties(const FJsonObje
                                                      ErrorMessage))
         {
             bAnyPropertiesSet = true;
-            FJsonObjectParameter PropResultObj = MakeShared<FJsonObject>();
+            TSharedPtr<FJsonObject> PropResultObj = MakeShared<FJsonObject>();
             PropResultObj->SetBoolField(TEXT("success"), true);
             ResultsObj->SetObjectField(TEXT("AutoPossessPlayer"), PropResultObj);
         }
         else
         {
-            FJsonObjectParameter PropResultObj = MakeShared<FJsonObject>();
+            TSharedPtr<FJsonObject> PropResultObj = MakeShared<FJsonObject>();
             PropResultObj->SetBoolField(TEXT("success"), false);
             PropResultObj->SetStringField(TEXT("error"), ErrorMessage);
             ResultsObj->SetObjectField(TEXT("AutoPossessPlayer"), PropResultObj);
@@ -1068,13 +1068,13 @@ FJsonObjectParameter UMCPBlueprintTools::HandleSetPawnProperties(const FJsonObje
             if (FUnrealMCPCommonUtils::SetObjectProperty(DefaultObject, RotationProps[i], Value, ErrorMessage))
             {
                 bAnyPropertiesSet = true;
-                FJsonObjectParameter PropResultObj = MakeShared<FJsonObject>();
+                TSharedPtr<FJsonObject> PropResultObj = MakeShared<FJsonObject>();
                 PropResultObj->SetBoolField(TEXT("success"), true);
                 ResultsObj->SetObjectField(RotationProps[i], PropResultObj);
             }
             else
             {
-                FJsonObjectParameter PropResultObj = MakeShared<FJsonObject>();
+                TSharedPtr<FJsonObject> PropResultObj = MakeShared<FJsonObject>();
                 PropResultObj->SetBoolField(TEXT("success"), false);
                 PropResultObj->SetStringField(TEXT("error"), ErrorMessage);
                 ResultsObj->SetObjectField(RotationProps[i], PropResultObj);
@@ -1091,13 +1091,13 @@ FJsonObjectParameter UMCPBlueprintTools::HandleSetPawnProperties(const FJsonObje
         if (FUnrealMCPCommonUtils::SetObjectProperty(DefaultObject, TEXT("bCanBeDamaged"), Value, ErrorMessage))
         {
             bAnyPropertiesSet = true;
-            FJsonObjectParameter PropResultObj = MakeShared<FJsonObject>();
+            TSharedPtr<FJsonObject> PropResultObj = MakeShared<FJsonObject>();
             PropResultObj->SetBoolField(TEXT("success"), true);
             ResultsObj->SetObjectField(TEXT("bCanBeDamaged"), PropResultObj);
         }
         else
         {
-            FJsonObjectParameter PropResultObj = MakeShared<FJsonObject>();
+            TSharedPtr<FJsonObject> PropResultObj = MakeShared<FJsonObject>();
             PropResultObj->SetBoolField(TEXT("success"), false);
             PropResultObj->SetStringField(TEXT("error"), ErrorMessage);
             ResultsObj->SetObjectField(TEXT("bCanBeDamaged"), PropResultObj);
@@ -1118,7 +1118,7 @@ FJsonObjectParameter UMCPBlueprintTools::HandleSetPawnProperties(const FJsonObje
     FJsonObjectParameter ResponseObj = MakeShared<FJsonObject>();
     ResponseObj->SetStringField(TEXT("blueprint"), BlueprintName);
     ResponseObj->SetBoolField(TEXT("success"), bAnyPropertiesSet);
-    ResponseObj->SetObjectField(TEXT("results"), ResultsObj);
+    ResponseObj->SetObjectField(TEXT("results"), ResultsObj.GetJsonObject());
     return ResponseObj;
 }
 

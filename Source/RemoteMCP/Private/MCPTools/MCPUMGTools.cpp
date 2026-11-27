@@ -483,7 +483,7 @@ FJsonObjectParameter UMCPUMGTools::HandleAddWidget(const FJsonObjectParameter& P
 	{
 		for (const auto& KV : (*PropsObj)->Values)
 		{
-			SetPropertyFromJsonValue(NewWidget, KV.Key, KV.Value);
+			SetPropertyFromJsonValue(NewWidget, FString(KV.Key.Len(), *KV.Key), KV.Value);
 		}
 	}
 
@@ -514,7 +514,7 @@ FJsonObjectParameter UMCPUMGTools::HandleAddWidget(const FJsonObjectParameter& P
 	{
 		for (const auto& KV : (*SlotObj)->Values)
 		{
-			SetPropertyFromJsonValue(Slot, KV.Key, KV.Value);
+			SetPropertyFromJsonValue(Slot, FString(KV.Key.Len(), *KV.Key), KV.Value);
 		}
 	}
 

@@ -14,7 +14,24 @@
 2. **批量任务处理**: 利用 AI 完成一次性的大量重复性工作，例如批量删除某类 Actor 或修改某类配置。
 3. **自动化工作流**: 与其他自动任务工具（如 n8n）配合使用，使非程序背景的团队成员（如策划）也能定义自动化工作流。
 
-## Quick Start
+## UE 5.8 及以后使用内置 Unreal MCP
+
+1. 安装下文的 RemoteMCP Python 依赖，在项目中启用 **RemoteMCP** 和 Epic 的 **Unreal MCP**（插件标识 `ModelContextProtocol`），然后重启编辑器。
+2. 在 **Editor Preferences → Plugins → RemoteMCP** 打开 **Enable** 和 **Auto Start**，再次启动编辑器。也可以只开启 **Enable**，重启后执行 `MCP.Start` 注册工具。
+3. 在 **Editor Preferences → General → Model Context Protocol** 打开 **Auto Start Server**，或在控制台执行 `ModelContextProtocol.StartServer`。客户端使用 **Streamable HTTP**，默认地址为 `http://127.0.0.1:8000/mcp`，实际端口和路径以 Epic 的设置为准。
+4. 在客户端调用 `remotemcp.get_unreal_state` 验证连接。通过 `remotemcp.get_dispatch` 和 `remotemcp.call_dispatch_tool` 发现和调用 RemoteMCP 的领域工具。
+
+原生模式下，`MCP.Start`、`MCP.Stop` 和 `MCP.Reload` 管理 RemoteMCP 工具的注册。Epic 的命令和设置管理 HTTP 服务。原生入口提供 RemoteMCP 工具，独立入口也提供资源和提示词。UE 5.8 的取消接口没有会话标识，取消客户端请求后，已提交的 RemoteMCP 工具仍会继续执行。
+
+运行端到端测试需要启动编辑器和安装 `requirements.txt` 中的依赖。在仓库根目录运行以下命令，端口以实际配置为准。
+
+```bash
+python Content/Python/tests/smoke_mcp.py http://127.0.0.1:8000/mcp --native
+```
+
+[Epic Unreal MCP 文档](https://dev.epicgames.com/documentation/unreal-engine/unreal-mcp-in-unreal-editor)
+
+## 独立服务 Quick Start（UE 5.7 及以前，或未启用 Unreal MCP）
 
 > 现在是AI的时代了，当你下载完本仓库之后可以直接咨询AI这个工具应该如何使用，AI应该会给到更真实，符合最新版本的使用指导
 
@@ -25,15 +42,11 @@
    ```bash
    git clone <repository-url> <Unreal-Engine-Plugins-Directory>/RemoteMCP
    ```
-2. 安装python依赖，首先保证本地有uv或者pip,最好是使用uv，保证python版本为3.11，然后使用pip下载以下几个package到指定目录
+2. 在 Windows 上使用 Python 3.11 安装仓库锁定的依赖。
 
-   ```
+   ```bash
    cd <Repo>/Content/Python
-   uv pip install httpx --target ./Lib/site-packages --force-reinstall --upgrade
-   uv pip install mcp[cli] --target ./Lib/site-packages --force-reinstall --upgrade
-   uv pip install anyio --target ./Lib/site-packages --force-reinstall --upgrade   
-   uv pip install pywin32 --target ./Lib/site-packages --force-reinstall --upgrade
-
+   uv pip install --python 3.11 --target ./Lib/site-packages -r ../../requirements.txt
    ```
 3. 启动引擎并在 `Edit->Plugins`面板中启动 `RemoteMCP`插件
 4. 重启引擎
